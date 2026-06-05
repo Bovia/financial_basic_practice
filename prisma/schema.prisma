@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  createdAt DateTime @default(now())
+
+  practiceRecords PracticeRecord[]
+  paperProgresses PaperProgress[]
+}
+
+model PaperProgress {
+  id                   Int      @id @default(autoincrement())
+  userId               Int
+  paperId              Int
+  currentQuestionIndex Int      @default(0)
+  completed            Boolean  @default(false)
+  score                Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  practiceRecords PracticeRecord[]
+
+  @@index([userId, paperId])
+}
+
+model PracticeRecord {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  paperId        Int
+  progressId     Int
+  questionId     Int
+  selectedAnswer String
+  isCorrect      Boolean
+  createdAt      DateTime @default(now())
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress PaperProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+  @@unique([progressId, questionId])
+  @@index([userId, paperId])
+}
