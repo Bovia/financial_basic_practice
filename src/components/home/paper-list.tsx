@@ -16,7 +16,7 @@ type CategoryData = {
 
 export function PaperList() {
   const router = useRouter();
-  const { username, isReady, ensureUser, clearUsername } = useUser();
+  const { username, isReady, clearUsername } = useUser();
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [expandedPaperId, setExpandedPaperId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,6 @@ export function PaperList() {
     async function load() {
       const name = username;
       if (!name) return;
-      await ensureUser();
       const response = await fetch(`/api/papers?username=${encodeURIComponent(name)}`);
       if (response.ok) {
         const data = (await response.json()) as CategoryData[];
@@ -37,7 +36,7 @@ export function PaperList() {
     }
 
     load();
-  }, [isReady, username, ensureUser]);
+  }, [isReady, username]);
 
   async function startPractice(paperId: number, restart = false) {
     if (!username) return;

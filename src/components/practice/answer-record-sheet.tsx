@@ -15,6 +15,7 @@ type AnswerItem = {
   index: number;
   selectedAnswer: AnswerOption | null;
   isCorrect: boolean | null;
+  isUnsaved?: boolean;
 };
 
 type AnswerRecordSheetProps = {
@@ -53,6 +54,7 @@ export function AnswerRecordSheet({
             const isAnswered = !!item.selectedAnswer;
             const isCorrect = item.isCorrect === true;
             const isIncorrect = item.isCorrect === false;
+            const isUnsaved = item.isUnsaved === true;
 
             return (
               <button
@@ -65,16 +67,18 @@ export function AnswerRecordSheet({
                 className={cn(
                   "flex h-10 flex-col items-center justify-center rounded-lg border transition-colors",
                   isActive && "border-blue-600 bg-white",
-                  !isActive && isCorrect && "border-green-200 bg-green-50",
-                  !isActive && isIncorrect && "border-red-200 bg-red-50",
+                  !isActive && isUnsaved && "border-amber-300 bg-amber-50",
+                  !isActive && !isUnsaved && isCorrect && "border-green-200 bg-green-50",
+                  !isActive && !isUnsaved && isIncorrect && "border-red-200 bg-red-50",
                   !isActive && !isAnswered && "border-slate-100 bg-slate-50"
                 )}
               >
                 <span
                   className={cn(
                     "text-xs font-semibold leading-none",
-                    isCorrect && "text-green-600",
-                    isIncorrect && "text-red-600",
+                    isUnsaved && "text-amber-600",
+                    !isUnsaved && isCorrect && "text-green-600",
+                    !isUnsaved && isIncorrect && "text-red-600",
                     !isAnswered && "text-slate-400"
                   )}
                 >

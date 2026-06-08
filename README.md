@@ -48,16 +48,16 @@ npm run dev
 
 ## 部署到 Vercel
 
+完整步骤见 **[部署操作手册](docs/部署操作手册.md)**（含 Neon 数据库、GitHub、Vercel 全流程）。
+
+简要步骤：
+
 1. 将项目推送到 GitHub
-2. 在 Vercel 导入项目
-3. 在 Vercel 环境变量中设置 `DATABASE_URL`
-4. 部署完成后运行 `prisma db push`（或通过 Vercel 构建命令自动执行 `prisma generate`）
+2. Neon 创建美国区数据库，复制 `DATABASE_URL`
+3. 在 Vercel 导入项目并配置环境变量 `DATABASE_URL`
+4. 本地执行 `npm run db:push` 初始化表结构
 
-构建命令已配置为：
-
-```bash
-prisma generate && next build
-```
+构建命令：`prisma generate && next build`
 
 ## 项目结构
 
