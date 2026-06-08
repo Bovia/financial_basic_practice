@@ -403,9 +403,9 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-[#f5f6f8]">
-      <header className="sticky top-0 z-10 bg-[#f5f6f8] px-4 pt-4">
-        <div className="mb-3 flex items-center justify-between">
+    <div className="mx-auto flex h-dvh max-w-lg flex-col bg-[#f5f6f8]">
+      <header className="z-10 shrink-0 border-b border-slate-200/60 bg-[#f5f6f8] px-4 pt-3 pb-3">
+        <div className="mb-2 flex items-center justify-between">
           <Button variant="icon" size="icon" onClick={handleBackClick}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
@@ -424,27 +424,27 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         </div>
 
         <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
             {TYPE_LABELS[questionType]}
           </span>
           {examMode ? (
-            <span className="text-xs text-slate-500">考试模式：不显示答案，最后统一交卷</span>
+            <span className="text-xs text-slate-500">考试模式：交卷后出分</span>
           ) : (
             isMultiple &&
             !isRevealed && (
-              <span className="text-xs text-slate-500">可多选，选完后点击确认答案</span>
+              <span className="text-xs text-slate-500">可多选，确认后看解析</span>
             )
           )}
         </div>
         <Progress value={progressPercent} />
       </header>
 
-      <main className="flex-1 px-4 py-6">
-        <h2 className="mb-6 text-lg font-semibold leading-relaxed text-slate-900">
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6">
+        <h2 className="mb-4 text-base font-semibold leading-relaxed text-slate-900">
           {currentQuestion.title}
         </h2>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {visibleOptions.map(({ label, text }) => (
             <OptionCard
               key={label}
@@ -469,15 +469,15 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         )}
 
         {showFeedback && (
-          <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div
-              className={`mb-3 rounded-xl px-4 py-3 text-sm font-medium ${
+              className={`mb-2 rounded-lg px-3 py-2 text-sm font-medium ${
                 isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
               }`}
             >
               {isCorrect ? "回答正确" : `回答错误，正确答案是 ${currentQuestion.answer}`}
             </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
+            <div className="rounded-lg bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">
               <span className="font-semibold text-slate-800">解析：</span>
               {currentQuestion.analysis}
             </div>
@@ -485,7 +485,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         )}
       </main>
 
-      <footer className="sticky bottom-0 flex items-center justify-between border-t border-slate-200/60 bg-[#f5f6f8] px-4 py-4">
+      <footer className="shrink-0 flex items-center justify-between border-t border-slate-200/60 bg-[#f5f6f8] px-4 py-3">
         <button
           type="button"
           onClick={() => navigateToIndex(currentIndex - 1)}
