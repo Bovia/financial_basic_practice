@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as Dialog from "@radix-ui/react-dialog";
 import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -57,6 +58,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const hasLoadedRef = useRef(false);
 
   const totalQuestions = questions.length;
@@ -70,8 +72,6 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   const showFeedback = !examMode && isRevealed;
   const isCorrect = isAnswerMatch(currentAnswer, currentQuestion?.answer ?? "");
   const progressPercent = totalQuestions > 0 ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
-  const hasUnsavedCurrent = currentIndex in localSelections;
-  const unsavedCount = Object.keys(localSelections).length;
   const visibleOptions = OPTION_LABELS.map((label, idx) => ({
     label,
     text: currentQuestion?.options[idx] ?? "",
@@ -247,17 +247,6 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     });
   }
 
-  function getUnsavedBatch() {
-    return Object.entries(localSelections).map(([indexText, selectedAnswer]) => {
-      const index = Number(indexText);
-      return {
-        index,
-        questionId: questions[index].id,
-        selectedAnswer: normalizeAnswer(selectedAnswer),
-      };
-    });
-  }
-
   function getAllSelectionsBatch() {
     return questions
       .map((question, index) => {
@@ -326,19 +315,6 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     return true;
   }
 
-  async function handleSave() {
-    if (examMode || !hasUnsavedCurrent || saving) return;
-
-    setSaving(true);
-    const ok = await saveToServer({
-      batch: getUnsavedBatch().filter((item) => item.index === currentIndex),
-      currentQuestionIndex: currentIndex,
-    });
-    setSaving(false);
-
-    if (!ok) return;
-  }
-
   function navigateToIndex(newIndex: number) {
     if (newIndex < 0 || newIndex >= totalQuestions) return;
     setCurrentIndex(newIndex);
@@ -378,7 +354,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
 
     setSaving(true);
     const ok = await saveToServer({
-      batch: getUnsavedBatch(),
+      batch: getAllSelectionsBatch(),
       currentQuestionIndex: currentIndex,
       complete: true,
     });
@@ -393,6 +369,31 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     ? true
     : isRevealed && !!currentAnswer;
 
+  function handleBackClick() {
+    setExitOpen(true);
+  }
+
+  async function handleExitKeep() {
+    setSaving(true);
+    const ok = await saveToServer({
+      batch: getAllSelectionsBatch(),
+      currentQuestionIndex: currentIndex,
+    });
+    setSaving(false);
+
+    if (!ok) return;
+
+    clearPracticeDraft(progressId);
+    setExitOpen(false);
+    router.push("/");
+  }
+
+  function handleExitDiscard() {
+    clearPracticeDraft(progressId);
+    setExitOpen(false);
+    router.push("/");
+  }
+
   if (loading || !settingsReady || !currentQuestion) {
     return (
       <div className="flex min-h-screen items-center justify-center text-slate-500">
@@ -405,7 +406,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-[#f5f6f8]">
       <header className="sticky top-0 z-10 bg-[#f5f6f8] px-4 pt-4">
         <div className="mb-3 flex items-center justify-between">
-          <Button variant="icon" size="icon" onClick={() => router.push("/")}>
+          <Button variant="icon" size="icon" onClick={handleBackClick}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-base font-bold text-slate-900">
@@ -436,11 +437,6 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           )}
         </div>
         <Progress value={progressPercent} />
-        {!examMode && unsavedCount > 0 && (
-          <p className="mt-2 text-center text-xs text-amber-600">
-            {unsavedCount} 题未暂存，点击「暂存」同步到云端
-          </p>
-        )}
       </header>
 
       <main className="flex-1 px-4 py-6">
@@ -500,18 +496,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           上一题
         </button>
 
-        {examMode ? (
-          <span className="text-xs text-slate-400">已答 {getAllSelectionsBatch().length} 题</span>
-        ) : (
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={!hasUnsavedCurrent || saving}
-            className="min-w-16"
-          >
-            {saving ? "暂存中" : "暂存"}
-          </Button>
-        )}
+        <span className="text-xs text-slate-400">已答 {getAllSelectionsBatch().length} 题</span>
 
         <button
           type="button"
@@ -545,11 +530,37 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
               : revealedIndices.has(index) || answers[index]?.selectedAnswer
                 ? isAnswerMatch(selected, question.answer)
                 : null,
-            isUnsaved: !examMode && index in localSelections,
+            isUnsaved: false,
           };
         })}
         onSelectQuestion={navigateToIndex}
       />
+
+      <Dialog.Root open={exitOpen} onOpenChange={setExitOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-xl">
+            <Dialog.Title className="text-base font-bold text-slate-900">退出练习</Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-slate-500">
+              是否保留此次记录？
+            </Dialog.Description>
+
+            <div className="mt-5 flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleExitDiscard}
+                disabled={saving}
+              >
+                不保留
+              </Button>
+              <Button className="flex-1" onClick={handleExitKeep} disabled={saving}>
+                {saving ? "保留中..." : "保留"}
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
