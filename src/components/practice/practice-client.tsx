@@ -47,6 +47,8 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   judge: "判断题",
 };
 
+const AUTO_NEXT_DELAY_MS = 600;
+
 export function PracticeClient({ paperId, progressId, questions }: PracticeClientProps) {
   const router = useRouter();
   const { username, isReady: userReady } = useUser();
@@ -60,6 +62,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   const [saving, setSaving] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const hasLoadedRef = useRef(false);
+  const autoNextTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentIndex];
@@ -163,10 +166,27 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     return localSelections[index] ?? answers[index]?.selectedAnswer ?? null;
   }
 
-  function maybeAutoNext() {
-    if (!autoNext || currentIndex >= totalQuestions - 1) return;
-    setCurrentIndex(currentIndex + 1);
-  }
+  const cancelAutoNext = useCallback(() => {
+    if (autoNextTimerRef.current) {
+      clearTimeout(autoNextTimerRef.current);
+      autoNextTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleAutoNext = useCallback(() => {
+    cancelAutoNext();
+    if (!autoNext) return;
+
+    autoNextTimerRef.current = setTimeout(() => {
+      setCurrentIndex((index) => {
+        if (index >= totalQuestions - 1) return index;
+        return index + 1;
+      });
+      autoNextTimerRef.current = null;
+    }, AUTO_NEXT_DELAY_MS);
+  }, [autoNext, cancelAutoNext, totalQuestions]);
+
+  useEffect(() => () => cancelAutoNext(), [cancelAutoNext]);
 
   function selectOption(label: AnswerOption) {
     if (!examMode && isRevealed) return;
@@ -193,12 +213,12 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     setLocalSelections((prev) => ({ ...prev, [currentIndex]: label }));
 
     if (examMode) {
-      maybeAutoNext();
+      scheduleAutoNext();
       return;
     }
 
     setRevealedIndices((prev) => new Set(prev).add(currentIndex));
-    maybeAutoNext();
+    scheduleAutoNext();
   }
 
   function confirmMultipleAnswer() {
@@ -207,7 +227,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     const normalized = normalizeAnswer(currentAnswer);
     setLocalSelections((prev) => ({ ...prev, [currentIndex]: normalized }));
     setRevealedIndices((prev) => new Set(prev).add(currentIndex));
-    maybeAutoNext();
+    scheduleAutoNext();
   }
 
   function applySavedAnswers(
@@ -317,6 +337,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
 
   function navigateToIndex(newIndex: number) {
     if (newIndex < 0 || newIndex >= totalQuestions) return;
+    cancelAutoNext();
     setCurrentIndex(newIndex);
   }
 
