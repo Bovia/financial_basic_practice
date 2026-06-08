@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPaper } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
-import type { AnswerOption } from "@/types/question";
 
 type RouteContext = {
   params: Promise<{ progressId: string }>;
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const answers = paper.questions.map((question, index) => {
       const record = progress.practiceRecords.find((r) => r.questionId === question.id);
-      const selectedAnswer = (record?.selectedAnswer as AnswerOption) ?? null;
+      const selectedAnswer = record?.selectedAnswer ?? null;
       const isCorrect = record?.isCorrect ?? false;
       if (isCorrect) correctCount++;
 

@@ -1,8 +1,6 @@
-import type { AnswerOption } from "@/types/question";
-
 export type PracticeDraft = {
   currentIndex: number;
-  selections: Record<number, AnswerOption>;
+  selections: Record<number, string>;
   revealed: number[];
 };
 

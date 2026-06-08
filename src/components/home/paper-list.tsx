@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronUp, LogOut, Play } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import type { PaperListItem } from "@/types/question";
 
 type CategoryData = {
@@ -17,6 +19,7 @@ type CategoryData = {
 export function PaperList() {
   const router = useRouter();
   const { username, isReady, clearUsername } = useUser();
+  const { isReady: settingsReady } = useUserSettings();
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [expandedPaperId, setExpandedPaperId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +55,7 @@ export function PaperList() {
     router.push(`/practice/${paperId}?progressId=${data.progressId}`);
   }
 
-  if (loading) {
+  if (loading || !settingsReady) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
         加载中...
@@ -82,9 +85,7 @@ export function PaperList() {
             </div>
           )}
         </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-          <BookOpen className="h-5 w-5" />
-        </div>
+        <UserSettingsDialog />
       </header>
 
       {categories.map((category) => (

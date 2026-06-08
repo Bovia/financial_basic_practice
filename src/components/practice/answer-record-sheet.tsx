@@ -9,11 +9,9 @@ import {
 } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { AnswerOption } from "@/types/question";
-
 type AnswerItem = {
   index: number;
-  selectedAnswer: AnswerOption | null;
+  selectedAnswer: string | null;
   isCorrect: boolean | null;
   isUnsaved?: boolean;
 };
@@ -23,6 +21,7 @@ type AnswerRecordSheetProps = {
   onOpenChange: (open: boolean) => void;
   currentIndex: number;
   totalQuestions: number;
+  examMode?: boolean;
   answers: AnswerItem[];
   onSelectQuestion: (index: number) => void;
 };
@@ -32,6 +31,7 @@ export function AnswerRecordSheet({
   onOpenChange,
   currentIndex,
   totalQuestions,
+  examMode,
   answers,
   onSelectQuestion,
 }: AnswerRecordSheetProps) {
@@ -52,9 +52,10 @@ export function AnswerRecordSheet({
           {answers.map((item) => {
             const isActive = item.index === currentIndex;
             const isAnswered = !!item.selectedAnswer;
-            const isCorrect = item.isCorrect === true;
-            const isIncorrect = item.isCorrect === false;
-            const isUnsaved = item.isUnsaved === true;
+            const showResult = !examMode;
+            const isCorrect = showResult && item.isCorrect === true;
+            const isIncorrect = showResult && item.isCorrect === false;
+            const isUnsaved = !examMode && item.isUnsaved === true;
 
             return (
               <button
@@ -70,6 +71,7 @@ export function AnswerRecordSheet({
                   !isActive && isUnsaved && "border-amber-300 bg-amber-50",
                   !isActive && !isUnsaved && isCorrect && "border-green-200 bg-green-50",
                   !isActive && !isUnsaved && isIncorrect && "border-red-200 bg-red-50",
+                  !isActive && isAnswered && examMode && "border-blue-100 bg-blue-50",
                   !isActive && !isAnswered && "border-slate-100 bg-slate-50"
                 )}
               >
@@ -79,6 +81,7 @@ export function AnswerRecordSheet({
                     isUnsaved && "text-amber-600",
                     !isUnsaved && isCorrect && "text-green-600",
                     !isUnsaved && isIncorrect && "text-red-600",
+                    examMode && isAnswered && !isActive && "text-blue-600",
                     !isAnswered && "text-slate-400"
                   )}
                 >

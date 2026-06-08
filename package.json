@@ -9,7 +9,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "parse:md": "npx tsx scripts/parse-md-to-questions.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

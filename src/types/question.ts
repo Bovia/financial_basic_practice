@@ -1,10 +1,13 @@
 export type AnswerOption = "A" | "B" | "C" | "D";
+export type QuestionType = "single" | "multiple" | "judge";
 
 export type Question = {
   id: number;
+  type?: QuestionType;
+  score?: number;
   title: string;
   options: [string, string, string, string];
-  answer: AnswerOption;
+  answer: string;
   analysis: string;
 };
 
@@ -45,7 +48,7 @@ export type HistoryRecord = {
 
 export type AnswerRecord = {
   questionId: number;
-  selectedAnswer: AnswerOption | null;
+  selectedAnswer: string | null;
   isCorrect: boolean | null;
 };
 
@@ -74,8 +77,8 @@ export type ResultDetail = {
     questionIndex: number;
     title: string;
     options: [string, string, string, string];
-    correctAnswer: AnswerOption;
-    selectedAnswer: AnswerOption | null;
+    correctAnswer: string;
+    selectedAnswer: string | null;
     isCorrect: boolean;
     analysis: string;
   }>;

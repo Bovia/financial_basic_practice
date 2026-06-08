@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPaperTotalQuestions, isAnswerCorrect } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
-import type { AnswerOption } from "@/types/question";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,8 +10,8 @@ export async function POST(request: NextRequest) {
       progressId?: number;
       paperId?: number;
       questionId?: number;
-      selectedAnswer?: AnswerOption;
-      answers?: Array<{ questionId: number; selectedAnswer: AnswerOption }>;
+      selectedAnswer?: string;
+      answers?: Array<{ questionId: number; selectedAnswer: string }>;
       currentQuestionIndex?: number;
       complete?: boolean;
     };
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Progress not found or already completed" }, { status: 404 });
     }
 
-    const pendingAnswers: Array<{ questionId: number; selectedAnswer: AnswerOption }> = [];
+    const pendingAnswers: Array<{ questionId: number; selectedAnswer: string }> = [];
 
     if (Array.isArray(answerBatch) && answerBatch.length > 0) {
       pendingAnswers.push(...answerBatch);
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const savedAnswers: Array<{
       questionId: number;
-      selectedAnswer: AnswerOption;
+      selectedAnswer: string;
       isCorrect: boolean;
     }> = [];
 
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest) {
       });
       savedAnswers.push({
         questionId: record.questionId,
-        selectedAnswer: record.selectedAnswer as AnswerOption,
+        selectedAnswer: record.selectedAnswer,
         isCorrect: record.isCorrect,
       });
     }

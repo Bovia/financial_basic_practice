@@ -29,6 +29,7 @@ export default async function PracticePage({ params, searchParams }: PracticePag
       progressId={progressId}
       questions={paper.questions.map((q) => ({
         id: q.id,
+        type: q.type,
         title: q.title,
         options: q.options,
         answer: q.answer,

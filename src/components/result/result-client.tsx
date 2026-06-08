@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, Home, RefreshCw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
+import { isOptionInAnswer } from "@/lib/answer";
 import { cn } from "@/lib/utils";
 import type { AnswerOption, ResultDetail } from "@/types/question";
 
@@ -165,30 +166,36 @@ export function ResultClient({ progressId }: ResultClientProps) {
 
           <div className="space-y-2">
             {OPTION_LABELS.map((label, idx) => {
-              const isCorrect = currentAnswer.correctAnswer === label;
-              const isSelected = currentAnswer.selectedAnswer === label;
+              const text = currentAnswer.options[idx];
+              if (!text.trim()) return null;
+
+              const isCorrect = isOptionInAnswer(currentAnswer.correctAnswer, label);
+              const isSelected = isOptionInAnswer(currentAnswer.selectedAnswer, label);
+              const isWrongSelected = isSelected && !isCorrect;
 
               return (
                 <div
                   key={label}
                   className={cn(
                     "flex items-center gap-3 rounded-xl border px-4 py-3",
-                    isCorrect
-                      ? "border-green-200 bg-green-50 text-green-800"
-                      : "border-slate-200 bg-white text-slate-700"
+                    isCorrect && "border-green-200 bg-green-50 text-green-800",
+                    isWrongSelected && "border-red-200 bg-red-50 text-red-800",
+                    !isCorrect && !isWrongSelected && "border-slate-200 bg-white text-slate-700"
                   )}
                 >
                   <span
                     className={cn(
                       "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
-                      isCorrect ? "bg-green-600 text-white" : "bg-slate-100 text-slate-500"
+                      isCorrect && "bg-green-600 text-white",
+                      isWrongSelected && "bg-red-500 text-white",
+                      !isCorrect && !isWrongSelected && "bg-slate-100 text-slate-500"
                     )}
                   >
                     {label}
                   </span>
-                  <span className="flex-1 text-sm">{currentAnswer.options[idx]}</span>
+                  <span className="flex-1 text-sm">{text}</span>
                   {isCorrect && <Check className="h-4 w-4 text-green-600" />}
-                  {isSelected && !isCorrect && (
+                  {isWrongSelected && (
                     <span className="text-xs text-red-500">你的答案</span>
                   )}
                 </div>

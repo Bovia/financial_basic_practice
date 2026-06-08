@@ -1,11 +1,6 @@
 import questionBankData from "../../data/question-bank.json";
-import type {
-  AnswerOption,
-  Category,
-  Paper,
-  Question,
-  QuestionBank,
-} from "@/types/question";
+import { isAnswerMatch } from "@/lib/answer";
+import type { Category, Paper, Question, QuestionBank } from "@/types/question";
 
 const questionBank = questionBankData as QuestionBank;
 
@@ -39,10 +34,11 @@ export function getPaperTotalQuestions(paperId: number): number {
 export function isAnswerCorrect(
   paperId: number,
   questionId: number,
-  selectedAnswer: AnswerOption
+  selectedAnswer: string
 ): boolean {
   const question = getQuestion(paperId, questionId);
-  return question?.answer === selectedAnswer;
+  if (!question) return false;
+  return isAnswerMatch(selectedAnswer, question.answer);
 }
 
 export function getPaperName(paperId: number): string {

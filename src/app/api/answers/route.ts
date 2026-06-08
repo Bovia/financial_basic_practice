@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPaper, isAnswerCorrect } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
-import type { AnswerOption } from "@/types/question";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
       progressId?: number;
       paperId?: number;
       questionId?: number;
-      selectedAnswer?: AnswerOption;
+      selectedAnswer?: string;
     };
 
     const { username, progressId, paperId, questionId, selectedAnswer } = body;

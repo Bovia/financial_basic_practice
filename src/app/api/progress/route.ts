@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPaper, getPaperTotalQuestions } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
-import type { AnswerOption, AnswerRecord } from "@/types/question";
+import type { AnswerRecord } from "@/types/question";
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       const record = progress.practiceRecords.find((r) => r.questionId === q.id);
       return {
         questionId: q.id,
-        selectedAnswer: (record?.selectedAnswer as AnswerOption) ?? null,
+        selectedAnswer: record?.selectedAnswer ?? null,
         isCorrect: record?.isCorrect ?? null,
       };
     });

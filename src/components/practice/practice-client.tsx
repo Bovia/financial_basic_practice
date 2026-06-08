@@ -1,25 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { OptionCard } from "@/components/practice/option-card";
 import { AnswerRecordSheet } from "@/components/practice/answer-record-sheet";
+import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
+import { useUserSettings } from "@/hooks/use-user-settings";
+import {
+  isAnswerMatch,
+  isOptionInAnswer,
+  normalizeAnswer,
+  toggleAnswerOption,
+} from "@/lib/answer";
 import {
   clearPracticeDraft,
   loadPracticeDraft,
   savePracticeDraft,
 } from "@/lib/practice-draft";
-import type { AnswerOption, ProgressDetail } from "@/types/question";
+import type { AnswerOption, ProgressDetail, QuestionType } from "@/types/question";
 
 type PracticeQuestion = {
   id: number;
+  type?: QuestionType;
   title: string;
   options: [string, string, string, string];
-  answer: AnswerOption;
+  answer: string;
   analysis: string;
 };
 
@@ -31,34 +40,45 @@ type PracticeClientProps = {
 
 const OPTION_LABELS: AnswerOption[] = ["A", "B", "C", "D"];
 
+const TYPE_LABELS: Record<QuestionType, string> = {
+  single: "单选题",
+  multiple: "多选题",
+  judge: "判断题",
+};
+
 export function PracticeClient({ paperId, progressId, questions }: PracticeClientProps) {
   const router = useRouter();
-  const { username, isReady } = useUser();
+  const { username, isReady: userReady } = useUser();
+  const { examMode, autoNext, setExamMode, isReady: settingsReady } = useUserSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<ProgressDetail["answers"]>([]);
-  const [localSelections, setLocalSelections] = useState<Record<number, AnswerOption>>({});
+  const [localSelections, setLocalSelections] = useState<Record<number, string>>({});
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentIndex];
+  const questionType = currentQuestion?.type ?? "single";
+  const isMultiple = questionType === "multiple";
   const savedAnswer = answers[currentIndex]?.selectedAnswer ?? null;
   const localAnswer = localSelections[currentIndex] ?? null;
   const currentAnswer = localAnswer ?? savedAnswer;
   const isRevealed = revealedIndices.has(currentIndex);
-  const isCorrect = currentAnswer ? currentAnswer === currentQuestion.answer : null;
+  const showFeedback = !examMode && isRevealed;
+  const isCorrect = isAnswerMatch(currentAnswer, currentQuestion?.answer ?? "");
   const progressPercent = totalQuestions > 0 ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
   const hasUnsavedCurrent = currentIndex in localSelections;
   const unsavedCount = Object.keys(localSelections).length;
+  const visibleOptions = OPTION_LABELS.map((label, idx) => ({
+    label,
+    text: currentQuestion?.options[idx] ?? "",
+  })).filter(({ text }) => text.trim().length > 0);
 
   const persistDraft = useCallback(
-    (
-      index: number,
-      selections: Record<number, AnswerOption>,
-      revealed: Set<number>
-    ) => {
+    (index: number, selections: Record<number, string>, revealed: Set<number>) => {
       savePracticeDraft(progressId, {
         currentIndex: index,
         selections,
@@ -68,54 +88,132 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     [progressId]
   );
 
-  const loadProgress = useCallback(async () => {
-    if (!username) return;
-
-    const response = await fetch(
-      `/api/progress?username=${encodeURIComponent(username)}&progressId=${progressId}`
-    );
-    if (!response.ok) return;
-
-    const data = (await response.json()) as ProgressDetail;
-    const draft = loadPracticeDraft(progressId);
-
-    const mergedSelections: Record<number, AnswerOption> = { ...draft?.selections };
-    const mergedRevealed = new Set<number>();
-
-    data.answers.forEach((answer, index) => {
-      if (answer.selectedAnswer) {
-        mergedRevealed.add(index);
-      }
+  const revealAnsweredQuestions = useCallback(() => {
+    setRevealedIndices((prev) => {
+      const next = new Set(prev);
+      questions.forEach((_, index) => {
+        if (localSelections[index] ?? answers[index]?.selectedAnswer) {
+          next.add(index);
+        }
+      });
+      return next;
     });
-    draft?.revealed.forEach((index) => mergedRevealed.add(index));
+  }, [answers, localSelections, questions]);
 
-    setCurrentIndex(draft?.currentIndex ?? data.currentQuestionIndex);
-    setAnswers(data.answers);
-    setLocalSelections(mergedSelections);
-    setRevealedIndices(mergedRevealed);
-    setLoading(false);
-  }, [username, progressId]);
+  const loadProgress = useCallback(
+    async (hideReveal: boolean) => {
+      if (!username) return;
+
+      const response = await fetch(
+        `/api/progress?username=${encodeURIComponent(username)}&progressId=${progressId}`
+      );
+      if (!response.ok) return;
+
+      const data = (await response.json()) as ProgressDetail;
+      const draft = loadPracticeDraft(progressId);
+
+      const mergedSelections: Record<number, string> = { ...draft?.selections };
+      const mergedRevealed = new Set<number>();
+
+      if (!hideReveal) {
+        data.answers.forEach((answer, index) => {
+          if (answer.selectedAnswer) {
+            mergedRevealed.add(index);
+          }
+        });
+        draft?.revealed.forEach((index) => mergedRevealed.add(index));
+      }
+
+      setCurrentIndex(draft?.currentIndex ?? data.currentQuestionIndex);
+      setAnswers(data.answers);
+      setLocalSelections(mergedSelections);
+      setRevealedIndices(mergedRevealed);
+      setLoading(false);
+    },
+    [username, progressId]
+  );
 
   useEffect(() => {
-    if (!isReady || !username) return;
-    loadProgress();
-  }, [isReady, username, loadProgress]);
+    hasLoadedRef.current = false;
+  }, [progressId]);
+
+  useEffect(() => {
+    if (!userReady || !settingsReady || !username || hasLoadedRef.current) return;
+
+    hasLoadedRef.current = true;
+    setLoading(true);
+    void loadProgress(examMode);
+  }, [userReady, settingsReady, username, progressId, examMode, loadProgress]);
 
   useEffect(() => {
     if (loading) return;
     persistDraft(currentIndex, localSelections, revealedIndices);
   }, [loading, currentIndex, localSelections, revealedIndices, persistDraft]);
 
-  function selectOption(selectedAnswer: AnswerOption) {
-    if (isRevealed) return;
-    setLocalSelections((prev) => ({ ...prev, [currentIndex]: selectedAnswer }));
+  async function handleExamModeChange(enabled: boolean) {
+    const ok = await setExamMode(enabled);
+    if (!ok) return;
+
+    if (!enabled) {
+      revealAnsweredQuestions();
+    }
+  }
+
+  function getSelection(index: number) {
+    return localSelections[index] ?? answers[index]?.selectedAnswer ?? null;
+  }
+
+  function maybeAutoNext() {
+    if (!autoNext || currentIndex >= totalQuestions - 1) return;
+    setCurrentIndex(currentIndex + 1);
+  }
+
+  function selectOption(label: AnswerOption) {
+    if (!examMode && isRevealed) return;
+
+    if (isMultiple) {
+      const current = localSelections[currentIndex] ?? savedAnswer ?? "";
+      const next = toggleAnswerOption(current, label);
+
+      setLocalSelections((prev) => {
+        const updated = { ...prev };
+        if (next) {
+          updated[currentIndex] = next;
+        } else {
+          delete updated[currentIndex];
+        }
+        return updated;
+      });
+
+      if (examMode) return;
+
+      return;
+    }
+
+    setLocalSelections((prev) => ({ ...prev, [currentIndex]: label }));
+
+    if (examMode) {
+      maybeAutoNext();
+      return;
+    }
+
     setRevealedIndices((prev) => new Set(prev).add(currentIndex));
+    maybeAutoNext();
+  }
+
+  function confirmMultipleAnswer() {
+    if (examMode || isRevealed || !isMultiple || !currentAnswer) return;
+
+    const normalized = normalizeAnswer(currentAnswer);
+    setLocalSelections((prev) => ({ ...prev, [currentIndex]: normalized }));
+    setRevealedIndices((prev) => new Set(prev).add(currentIndex));
+    maybeAutoNext();
   }
 
   function applySavedAnswers(
     items: Array<{
       questionId: number;
-      selectedAnswer: AnswerOption;
+      selectedAnswer: string;
       isCorrect: boolean;
     }>
   ) {
@@ -155,13 +253,27 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
       return {
         index,
         questionId: questions[index].id,
-        selectedAnswer,
+        selectedAnswer: normalizeAnswer(selectedAnswer),
       };
     });
   }
 
+  function getAllSelectionsBatch() {
+    return questions
+      .map((question, index) => {
+        const selectedAnswer = getSelection(index);
+        if (!selectedAnswer) return null;
+        return {
+          index,
+          questionId: question.id,
+          selectedAnswer: normalizeAnswer(selectedAnswer),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }
+
   async function saveToServer(options: {
-    batch?: ReturnType<typeof getUnsavedBatch>;
+    batch?: Array<{ questionId: number; selectedAnswer: string }>;
     currentQuestionIndex?: number;
     complete?: boolean;
   }) {
@@ -197,7 +309,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     const data = (await response.json()) as {
       savedAnswers?: Array<{
         questionId: number;
-        selectedAnswer: AnswerOption;
+        selectedAnswer: string;
         isCorrect: boolean;
       }>;
       completed?: boolean;
@@ -215,7 +327,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   }
 
   async function handleSave() {
-    if (!hasUnsavedCurrent || saving) return;
+    if (examMode || !hasUnsavedCurrent || saving) return;
 
     setSaving(true);
     const ok = await saveToServer({
@@ -232,7 +344,31 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     setCurrentIndex(newIndex);
   }
 
+  async function handleSubmit() {
+    setSaving(true);
+    const ok = await saveToServer({
+      batch: getAllSelectionsBatch(),
+      currentQuestionIndex: currentIndex,
+      complete: true,
+    });
+    setSaving(false);
+
+    if (ok) {
+      router.push(`/result/${progressId}`);
+    }
+  }
+
   async function handleNext() {
+    if (examMode) {
+      if (currentIndex < totalQuestions - 1) {
+        navigateToIndex(currentIndex + 1);
+        return;
+      }
+
+      await handleSubmit();
+      return;
+    }
+
     if (!isRevealed || !currentAnswer) return;
 
     if (currentIndex < totalQuestions - 1) {
@@ -253,7 +389,11 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     }
   }
 
-  if (loading || !currentQuestion) {
+  const canGoNext = examMode
+    ? true
+    : isRevealed && !!currentAnswer;
+
+  if (loading || !settingsReady || !currentQuestion) {
     return (
       <div className="flex min-h-screen items-center justify-center text-slate-500">
         加载中...
@@ -271,14 +411,34 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           <h1 className="text-base font-bold text-slate-900">
             第{currentIndex + 1}题 / {totalQuestions}
           </h1>
-          <Button variant="icon" size="icon" onClick={() => setSheetOpen(true)}>
-            <LayoutGrid className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <UserSettingsDialog
+              onExamModeChange={handleExamModeChange}
+              iconClassName="h-9 w-9"
+            />
+            <Button variant="icon" size="icon" onClick={() => setSheetOpen(true)}>
+              <LayoutGrid className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+            {TYPE_LABELS[questionType]}
+          </span>
+          {examMode ? (
+            <span className="text-xs text-slate-500">考试模式：不显示答案，最后统一交卷</span>
+          ) : (
+            isMultiple &&
+            !isRevealed && (
+              <span className="text-xs text-slate-500">可多选，选完后点击确认答案</span>
+            )
+          )}
         </div>
         <Progress value={progressPercent} />
-        {unsavedCount > 0 && (
+        {!examMode && unsavedCount > 0 && (
           <p className="mt-2 text-center text-xs text-amber-600">
-            {unsavedCount} 题未保存，点击「保存」同步到云端
+            {unsavedCount} 题未暂存，点击「暂存」同步到云端
           </p>
         )}
       </header>
@@ -289,20 +449,30 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         </h2>
 
         <div className="space-y-3">
-          {OPTION_LABELS.map((label, idx) => (
+          {visibleOptions.map(({ label, text }) => (
             <OptionCard
               key={label}
               label={label}
-              text={currentQuestion.options[idx]}
-              isSelected={currentAnswer === label}
-              isRevealed={isRevealed}
-              isCorrectOption={currentQuestion.answer === label}
+              text={text}
+              isSelected={isOptionInAnswer(currentAnswer, label)}
+              isRevealed={showFeedback}
+              isCorrectOption={isOptionInAnswer(currentQuestion.answer, label)}
               onClick={() => selectOption(label)}
             />
           ))}
         </div>
 
-        {isRevealed && (
+        {!examMode && isMultiple && !isRevealed && (
+          <Button
+            className="mt-4 w-full"
+            onClick={confirmMultipleAnswer}
+            disabled={!currentAnswer}
+          >
+            确认答案
+          </Button>
+        )}
+
+        {showFeedback && (
           <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div
               className={`mb-3 rounded-xl px-4 py-3 text-sm font-medium ${
@@ -330,22 +500,30 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           上一题
         </button>
 
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={!hasUnsavedCurrent || saving}
-          className="min-w-16"
-        >
-          {saving ? "保存中" : "保存"}
-        </Button>
+        {examMode ? (
+          <span className="text-xs text-slate-400">已答 {getAllSelectionsBatch().length} 题</span>
+        ) : (
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={!hasUnsavedCurrent || saving}
+            className="min-w-16"
+          >
+            {saving ? "暂存中" : "暂存"}
+          </Button>
+        )}
 
         <button
           type="button"
           onClick={handleNext}
-          disabled={!isRevealed || !currentAnswer || saving}
+          disabled={!canGoNext || saving}
           className="flex items-center gap-1 text-sm font-medium text-slate-600 disabled:opacity-40"
         >
-          {currentIndex === totalQuestions - 1 ? "完成" : "下一题"}
+          {examMode && currentIndex === totalQuestions - 1
+            ? "交卷"
+            : currentIndex === totalQuestions - 1
+              ? "完成"
+              : "下一题"}
           <ChevronRight className="h-4 w-4" />
         </button>
       </footer>
@@ -355,17 +533,21 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         onOpenChange={setSheetOpen}
         currentIndex={currentIndex}
         totalQuestions={totalQuestions}
-        answers={questions.map((_, index) => ({
-          index,
-          selectedAnswer:
-            localSelections[index] ?? answers[index]?.selectedAnswer ?? null,
-          isCorrect:
-            revealedIndices.has(index) || answers[index]?.selectedAnswer
-              ? (localSelections[index] ?? answers[index]?.selectedAnswer) ===
-                questions[index].answer
-              : null,
-          isUnsaved: index in localSelections,
-        }))}
+        examMode={examMode}
+        answers={questions.map((question, index) => {
+          const selected = getSelection(index);
+
+          return {
+            index,
+            selectedAnswer: selected,
+            isCorrect: examMode
+              ? null
+              : revealedIndices.has(index) || answers[index]?.selectedAnswer
+                ? isAnswerMatch(selected, question.answer)
+                : null,
+            isUnsaved: !examMode && index in localSelections,
+          };
+        })}
         onSelectQuestion={navigateToIndex}
       />
     </div>
