@@ -79,19 +79,19 @@ export function ResultClient({ progressId }: ResultClientProps) {
       </header>
 
       <div className="px-4">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-4 text-white">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-blue-100">{result.paperName}</p>
-              <p className="mt-2 text-4xl font-bold">
+              <p className="text-xs text-blue-100">{result.paperName}</p>
+              <p className="mt-1 text-3xl font-bold">
                 {result.score}/{result.totalQuestions}
               </p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-              <Trophy className="h-6 w-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+              <Trophy className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-4 text-sm">
+          <div className="mt-3 flex items-center gap-3 text-xs">
             <span>正确率 {result.accuracy}%</span>
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-green-400" />
@@ -104,38 +104,42 @@ export function ResultClient({ progressId }: ResultClientProps) {
           </div>
         </div>
 
-        <section className="mt-6">
-          <h2 className="mb-3 text-base font-bold text-slate-900">答题详情</h2>
-          <div className="grid grid-cols-4 gap-3">
-            {result.answers.map((item, index) => (
-              <button
-                key={item.questionId}
-                type="button"
-                onClick={() => setCurrentIndex(index)}
-                className={cn(
-                  "flex flex-col items-center justify-center rounded-xl border-2 py-3 transition-colors",
-                  index === currentIndex && "border-blue-600",
-                  index !== currentIndex && item.isCorrect && "border-green-200 bg-green-50",
-                  index !== currentIndex && !item.isCorrect && "border-red-200 bg-red-50"
-                )}
-              >
-                <span
+        <section className="mt-4">
+          <h2 className="mb-2 text-sm font-bold text-slate-900">答题详情</h2>
+          <div className="max-h-40 overflow-y-auto overscroll-contain rounded-xl border border-slate-100 bg-white p-2">
+            <div className="grid grid-cols-6 gap-1">
+              {result.answers.map((item, index) => (
+                <button
+                  key={item.questionId}
+                  type="button"
+                  onClick={() => setCurrentIndex(index)}
                   className={cn(
-                    "text-base font-semibold",
-                    item.isCorrect ? "text-green-600" : "text-red-600"
+                    "flex h-8 flex-col items-center justify-center rounded-md border transition-colors",
+                    index === currentIndex && "border-blue-600 bg-white ring-1 ring-blue-600",
+                    index !== currentIndex && item.isCorrect && "border-green-200 bg-green-50",
+                    index !== currentIndex && !item.isCorrect && "border-red-200 bg-red-50"
                   )}
                 >
-                  {index + 1}
-                </span>
-                {item.selectedAnswer && (
-                  <span className="mt-0.5 text-xs text-slate-500">{item.selectedAnswer}</span>
-                )}
-              </button>
-            ))}
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold leading-none",
+                      item.isCorrect ? "text-green-600" : "text-red-600"
+                    )}
+                  >
+                    {index + 1}
+                  </span>
+                  {item.selectedAnswer && (
+                    <span className="mt-px text-[9px] leading-none text-slate-500">
+                      {item.selectedAnswer}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+        <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <span className="font-semibold text-slate-900">第{currentIndex + 1}题</span>
             <div className="flex items-center gap-3 text-sm text-slate-500">
