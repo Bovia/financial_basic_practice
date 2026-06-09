@@ -17,7 +17,7 @@ export function UsernameGate({ children }: UsernameGateProps) {
 
   if (!isReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500">
+      <div className="flex min-h-screen items-center justify-center text-app-text-secondary">
         加载中...
       </div>
     );
@@ -51,13 +51,13 @@ export function UsernameGate({ children }: UsernameGateProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f6f8] px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm">
-        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-          <User className="h-6 w-6" />
+    <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-app-border bg-app-surface p-6 shadow-sm">
+        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-app-accent-soft text-app-accent-text">
+          <User className="h-6 w-6" strokeWidth={1.75} />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">欢迎使用刷题系统</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-app-text">欢迎使用刷题系统</h1>
+        <p className="mt-2 text-sm text-app-text-secondary">
           输入用户名即可开始，换浏览器或设备也能继续练习
         </p>
 
@@ -70,16 +70,16 @@ export function UsernameGate({ children }: UsernameGateProps) {
               placeholder="请输入用户名"
               maxLength={20}
               autoFocus
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-app-border bg-app-surface px-4 py-3 text-base text-app-text outline-none focus:border-app-accent focus:ring-2 focus:ring-app-accent-soft"
             />
-            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+            {error && <p className="mt-2 text-sm text-app-error">{error}</p>}
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={submitting || !input.trim()}>
             {submitting ? "进入中..." : "进入练习"}
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-slate-400">
+        <p className="mt-4 text-center text-xs text-app-text-muted">
           2-20 个字符，支持中文、字母、数字、下划线
         </p>
       </div>

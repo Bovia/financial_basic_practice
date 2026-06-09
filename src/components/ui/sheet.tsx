@@ -17,7 +17,7 @@ const SheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -34,7 +34,7 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-sm flex-col bg-white p-6 shadow-xl duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-sm flex-col border-l border-app-border bg-app-surface p-6 shadow-xl duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold text-slate-900", className)}
+    className={cn("text-lg font-semibold text-app-text", className)}
     {...props}
   />
 ));
@@ -63,8 +63,8 @@ SheetTitle.displayName = DialogPrimitive.Title.displayName;
 
 function SheetCloseButton() {
   return (
-    <SheetClose className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100">
-      <X className="h-4 w-4" />
+    <SheetClose className="rounded-full p-1.5 text-app-text-secondary hover:bg-app-surface-muted">
+      <X className="h-4 w-4" strokeWidth={1.75} />
       <span className="sr-only">关闭</span>
     </SheetClose>
   );

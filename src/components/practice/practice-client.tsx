@@ -417,20 +417,20 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
 
   if (loading || !settingsReady || !currentQuestion) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500">
+      <div className="flex min-h-screen items-center justify-center text-app-text-secondary">
         加载中...
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex h-dvh max-w-lg flex-col bg-[#f5f6f8]">
-      <header className="z-10 shrink-0 border-b border-slate-200/60 bg-[#f5f6f8] px-4 pt-3 pb-3">
+    <div className="mx-auto flex h-dvh max-w-lg flex-col bg-app-bg">
+      <header className="z-10 shrink-0 border-b border-app-border bg-app-bg px-4 pt-3 pb-3">
         <div className="mb-2 flex items-center justify-between">
           <Button variant="icon" size="icon" onClick={handleBackClick}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-base font-bold text-slate-900">
+          <h1 className="text-base font-bold text-app-text">
             第{currentIndex + 1}题 / {totalQuestions}
           </h1>
           <div className="flex items-center gap-1">
@@ -445,15 +445,15 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         </div>
 
         <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+          <span className="rounded-full bg-app-accent-soft px-2 py-0.5 text-xs font-medium text-app-accent-text">
             {TYPE_LABELS[questionType]}
           </span>
           {examMode ? (
-            <span className="text-xs text-slate-500">考试模式：交卷后出分</span>
+            <span className="text-xs text-app-text-secondary">考试模式：交卷后出分</span>
           ) : (
             isMultiple &&
             !isRevealed && (
-              <span className="text-xs text-slate-500">可多选，确认后看解析</span>
+              <span className="text-xs text-app-text-secondary">可多选，确认后看解析</span>
             )
           )}
         </div>
@@ -461,7 +461,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6">
-        <h2 className="mb-4 text-base font-semibold leading-relaxed text-slate-900">
+        <h2 className="mb-4 text-base font-semibold leading-relaxed text-app-text">
           {currentQuestion.title}
         </h2>
 
@@ -493,37 +493,39 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div
               className={`mb-2 rounded-lg px-3 py-2 text-sm font-medium ${
-                isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                isCorrect
+                  ? "bg-app-success-soft text-app-success"
+                  : "bg-app-error-soft text-app-error"
               }`}
             >
               {isCorrect ? "回答正确" : `回答错误，正确答案是 ${currentQuestion.answer}`}
             </div>
-            <div className="rounded-lg bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">
-              <span className="font-semibold text-slate-800">解析：</span>
+            <div className="rounded-lg bg-app-surface-muted p-3 text-sm leading-relaxed text-app-text-secondary">
+              <span className="font-semibold text-app-text">解析：</span>
               {currentQuestion.analysis}
             </div>
           </div>
         )}
       </main>
 
-      <footer className="shrink-0 flex items-center justify-between border-t border-slate-200/60 bg-[#f5f6f8] px-4 py-3">
+      <footer className="shrink-0 flex items-center justify-between border-t border-app-border bg-app-bg px-4 py-3">
         <button
           type="button"
           onClick={() => navigateToIndex(currentIndex - 1)}
           disabled={currentIndex === 0}
-          className="flex items-center gap-1 text-sm font-medium text-slate-600 disabled:opacity-40"
+          className="flex items-center gap-1 text-sm font-medium text-app-text-secondary disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
           上一题
         </button>
 
-        <span className="text-xs text-slate-400">已答 {getAllSelectionsBatch().length} 题</span>
+        <span className="text-xs text-app-text-muted">已答 {getAllSelectionsBatch().length} 题</span>
 
         <button
           type="button"
           onClick={handleNext}
           disabled={!canGoNext || saving}
-          className="flex items-center gap-1 text-sm font-medium text-slate-600 disabled:opacity-40"
+          className="flex items-center gap-1 text-sm font-medium text-app-text-secondary disabled:opacity-40"
         >
           {examMode && currentIndex === totalQuestions - 1
             ? "交卷"
@@ -560,9 +562,9 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
       <Dialog.Root open={exitOpen} onOpenChange={setExitOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-xl">
-            <Dialog.Title className="text-base font-bold text-slate-900">退出练习</Dialog.Title>
-            <Dialog.Description className="mt-2 text-sm text-slate-500">
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-app-border bg-app-surface p-5 shadow-xl">
+            <Dialog.Title className="text-base font-bold text-app-text">退出练习</Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-app-text-secondary">
               是否保留此次记录？
             </Dialog.Description>
 

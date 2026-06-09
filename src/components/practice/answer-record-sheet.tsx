@@ -42,7 +42,7 @@ export function AnswerRecordSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex h-full max-w-[300px] flex-col overflow-hidden p-0">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">
           <SheetHeader className="space-y-0">
             <SheetTitle className="text-base">答题记录</SheetTitle>
           </SheetHeader>
@@ -57,7 +57,6 @@ export function AnswerRecordSheet({
               const showResult = !examMode;
               const isCorrect = showResult && item.isCorrect === true;
               const isIncorrect = showResult && item.isCorrect === false;
-              const isUnsaved = !examMode && item.isUnsaved === true;
 
               return (
                 <button
@@ -69,28 +68,26 @@ export function AnswerRecordSheet({
                   }}
                   className={cn(
                     "flex h-10 flex-col items-center justify-center rounded-lg border transition-colors",
-                    isActive && "border-blue-600 bg-white",
-                    !isActive && isUnsaved && "border-amber-300 bg-amber-50",
-                    !isActive && !isUnsaved && isCorrect && "border-green-200 bg-green-50",
-                    !isActive && !isUnsaved && isIncorrect && "border-red-200 bg-red-50",
-                    !isActive && isAnswered && examMode && "border-blue-100 bg-blue-50",
-                    !isActive && !isAnswered && "border-slate-100 bg-slate-50"
+                    isActive && "border-app-accent bg-app-surface ring-1 ring-app-accent",
+                    !isActive && isCorrect && "border-app-success-border bg-app-success-soft",
+                    !isActive && isIncorrect && "border-app-error-border bg-app-error-soft",
+                    !isActive && isAnswered && examMode && "border-app-accent-soft bg-app-accent-soft",
+                    !isActive && !isAnswered && "border-app-border bg-app-surface-muted"
                   )}
                 >
                   <span
                     className={cn(
                       "text-xs font-semibold leading-none",
-                      isUnsaved && "text-amber-600",
-                      !isUnsaved && isCorrect && "text-green-600",
-                      !isUnsaved && isIncorrect && "text-red-600",
-                      examMode && isAnswered && !isActive && "text-blue-600",
-                      !isAnswered && "text-slate-400"
+                      isCorrect && "text-app-success",
+                      isIncorrect && "text-app-error",
+                      examMode && isAnswered && !isActive && "text-app-accent-text",
+                      !isAnswered && "text-app-text-muted"
                     )}
                   >
                     {item.index + 1}
                   </span>
                   {item.selectedAnswer && (
-                    <span className="mt-0.5 text-[10px] leading-none text-slate-500">
+                    <span className="mt-0.5 text-[10px] leading-none text-app-text-muted">
                       {item.selectedAnswer}
                     </span>
                   )}
@@ -100,8 +97,8 @@ export function AnswerRecordSheet({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-slate-100 px-4 py-3">
-          <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
+        <div className="shrink-0 border-t border-app-border px-4 py-3">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-app-text-secondary">
             <span>
               已答 {answeredCount}/{totalQuestions}
             </span>

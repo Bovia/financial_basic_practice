@@ -74,14 +74,21 @@ export function useUserSettings() {
     [updateSettings]
   );
 
+  const setTheme = useCallback(
+    async (theme: UserSettings["theme"]) => updateSettings({ theme }),
+    [updateSettings]
+  );
+
   return {
     settings,
     examMode: settings.examMode,
     autoNext: settings.autoNext,
+    theme: settings.theme,
     isReady,
     updating,
     setExamMode,
     setAutoNext,
+    setTheme,
     updateSettings,
     reloadSettings: loadSettings,
   };

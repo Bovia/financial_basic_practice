@@ -57,7 +57,7 @@ export function PaperList() {
 
   if (loading || !settingsReady) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
+      <div className="flex min-h-[50vh] items-center justify-center text-app-text-secondary">
         加载中...
       </div>
     );
@@ -67,17 +67,17 @@ export function PaperList() {
     <div className="mx-auto max-w-lg px-4 pb-8">
       <header className="mb-6 flex items-start justify-between pt-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">练习题库</h1>
-          <p className="mt-1 text-sm text-slate-500">选择套题开始练习</p>
+          <h1 className="text-2xl font-bold text-app-text">练习题库</h1>
+          <p className="mt-1 text-sm text-app-text-secondary">选择套题开始练习</p>
           {username && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mt-2 flex items-center gap-2 text-xs text-app-text-muted">
               <span>
-                当前用户：<span className="font-medium text-slate-600">{username}</span>
+                当前用户：<span className="font-medium text-app-text-secondary">{username}</span>
               </span>
               <button
                 type="button"
                 onClick={clearUsername}
-                className="flex items-center gap-0.5 text-blue-600 hover:underline"
+                className="flex items-center gap-0.5 text-app-accent-text hover:underline"
               >
                 <LogOut className="h-3 w-3" />
                 切换用户
@@ -91,9 +91,9 @@ export function PaperList() {
       {categories.map((category) => (
         <section key={category.id} className="mb-6">
           <div className="mb-4 flex items-center gap-2">
-            <div className="h-5 w-1 rounded-full bg-blue-600" />
-            <h2 className="text-lg font-bold text-slate-900">{category.name}</h2>
-            <span className="text-sm text-slate-400">{category.paperCount}套</span>
+            <div className="h-5 w-1 rounded-full bg-app-accent" />
+            <h2 className="text-lg font-bold text-app-text">{category.name}</h2>
+            <span className="text-sm text-app-text-muted">{category.paperCount}套</span>
           </div>
 
           <div className="space-y-3">
@@ -104,19 +104,19 @@ export function PaperList() {
               return (
                 <div
                   key={paper.id}
-                  className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+                  className="overflow-hidden rounded-2xl border border-app-border bg-app-surface shadow-sm"
                 >
                   <div className="flex items-center gap-4 p-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-accent-soft text-sm font-bold text-app-accent-text">
                       {paper.id}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900">{paper.name}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-semibold text-app-text">{paper.name}</p>
+                      <p className="text-sm text-app-text-secondary">
                         {paper.status === "not_started" && "未开始"}
                         {paper.status === "in_progress" && (
-                          <span className="text-blue-600">
+                          <span className="text-app-accent-text">
                             进行中 {paper.answeredCount}/{paper.totalQuestions}
                           </span>
                         )}
@@ -144,7 +144,7 @@ export function PaperList() {
                         <button
                           type="button"
                           onClick={() => setExpandedPaperId(isExpanded ? null : paper.id)}
-                          className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
+                          className="rounded-lg p-2 text-app-text-muted hover:bg-app-surface-muted"
                         >
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4" />
@@ -157,16 +157,16 @@ export function PaperList() {
                   </div>
 
                   {isExpanded && hasHistory && (
-                    <div className="border-t border-slate-100 bg-slate-50 px-4 py-2">
+                    <div className="border-t border-app-border bg-app-surface-muted px-4 py-2">
                       {paper.history.map((record, index) => (
                         <button
                           key={record.id}
                           type="button"
                           onClick={() => router.push(`/result/${record.id}`)}
-                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm hover:bg-slate-100"
+                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm hover:bg-app-surface"
                         >
-                          <span className="text-slate-600">记录{paper.history.length - index}</span>
-                          <span className="font-medium text-slate-800">
+                          <span className="text-app-text-secondary">记录{paper.history.length - index}</span>
+                          <span className="font-medium text-app-text">
                             {record.score}/{record.totalQuestions} →
                           </span>
                         </button>

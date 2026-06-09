@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { UsernameGate } from "@/components/user/username-gate";
 import "./globals.css";
 
@@ -13,9 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" data-theme="sun">
       <body>
-        <UsernameGate>{children}</UsernameGate>
+        <ThemeProvider>
+          <UsernameGate>{children}</UsernameGate>
+        </ThemeProvider>
       </body>
     </html>
   );

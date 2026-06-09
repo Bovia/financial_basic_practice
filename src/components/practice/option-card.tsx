@@ -33,22 +33,24 @@ export function OptionCard({
       disabled={disabled || isRevealed}
       className={cn(
         "flex w-full items-center gap-2.5 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
-        showCorrect && "border-green-400 bg-green-50",
-        showWrong && "border-red-400 bg-red-50",
-        !isRevealed && isSelected && "border-blue-600 bg-white shadow-sm",
-        !isRevealed && !isSelected && "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50",
-        isRevealed && !showCorrect && !showWrong && "border-slate-200 bg-white opacity-60",
+        showCorrect && "border-app-success-border bg-app-success-soft",
+        showWrong && "border-app-error-border bg-app-error-soft",
+        !isRevealed && isSelected && "border-app-accent bg-app-surface shadow-sm",
+        !isRevealed &&
+          !isSelected &&
+          "border-app-border bg-app-surface hover:border-app-accent-text hover:bg-app-surface-muted",
+        isRevealed && !showCorrect && !showWrong && "border-app-border bg-app-surface opacity-60",
         disabled && !isRevealed && "cursor-default"
       )}
     >
       <span
         className={cn(
           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-          showCorrect && "bg-green-600 text-white",
-          showWrong && "bg-red-500 text-white",
-          !isRevealed && isSelected && "bg-blue-600 text-white",
-          !isRevealed && !isSelected && "bg-slate-100 text-slate-500",
-          isRevealed && !showCorrect && !showWrong && "bg-slate-100 text-slate-400"
+          showCorrect && "bg-app-success text-white",
+          showWrong && "bg-app-error text-white",
+          !isRevealed && isSelected && "bg-app-accent text-white",
+          !isRevealed && !isSelected && "bg-app-surface-muted text-app-text-muted",
+          isRevealed && !showCorrect && !showWrong && "bg-app-surface-muted text-app-text-muted"
         )}
       >
         {label}
@@ -56,15 +58,15 @@ export function OptionCard({
       <span
         className={cn(
           "flex-1 text-sm font-medium leading-snug",
-          showCorrect && "text-green-800",
-          showWrong && "text-red-800",
-          !showCorrect && !showWrong && "text-slate-800"
+          showCorrect && "text-app-success",
+          showWrong && "text-app-error",
+          !showCorrect && !showWrong && "text-app-text"
         )}
       >
         {text}
       </span>
-      {showCorrect && <Check className="h-4 w-4 shrink-0 text-green-600" />}
-      {showWrong && <X className="h-4 w-4 shrink-0 text-red-500" />}
+      {showCorrect && <Check className="h-4 w-4 shrink-0 text-app-success" strokeWidth={1.75} />}
+      {showWrong && <X className="h-4 w-4 shrink-0 text-app-error" strokeWidth={1.75} />}
     </button>
   );
 }

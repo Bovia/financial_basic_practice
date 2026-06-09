@@ -2,6 +2,65 @@
 
 @theme inline {
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --color-app-bg: var(--app-bg);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-muted: var(--app-surface-muted);
+  --color-app-text: var(--app-text);
+  --color-app-text-secondary: var(--app-text-secondary);
+  --color-app-text-muted: var(--app-text-muted);
+  --color-app-border: var(--app-border);
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-soft: var(--app-accent-soft);
+  --color-app-accent-text: var(--app-accent-text);
+  --color-app-success: var(--app-success);
+  --color-app-success-soft: var(--app-success-soft);
+  --color-app-success-border: var(--app-success-border);
+  --color-app-error: var(--app-error);
+  --color-app-error-soft: var(--app-error-soft);
+  --color-app-error-border: var(--app-error-border);
+}
+
+:root,
+[data-theme="sun"] {
+  --app-bg: #f5f6f8;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f1f5f9;
+  --app-text: #0f172a;
+  --app-text-secondary: #64748b;
+  --app-text-muted: #94a3b8;
+  --app-border: #e2e8f0;
+  --app-accent: #1d4ed8;
+  --app-accent-soft: #dbeafe;
+  --app-accent-text: #1d4ed8;
+  --app-success: #16a34a;
+  --app-success-soft: #f0fdf4;
+  --app-success-border: #bbf7d0;
+  --app-error: #dc2626;
+  --app-error-soft: #fef2f2;
+  --app-error-border: #fecaca;
+  --app-hero-from: #2563eb;
+  --app-hero-to: #1d4ed8;
+}
+
+[data-theme="moon"] {
+  --app-bg: #161618;
+  --app-surface: #232326;
+  --app-surface-muted: #2c2c30;
+  --app-text: #e4e4e7;
+  --app-text-secondary: #a1a1aa;
+  --app-text-muted: #71717a;
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-accent: #5b7fd6;
+  --app-accent-soft: rgba(91, 127, 214, 0.18);
+  --app-accent-text: #8ba8e8;
+  --app-success: #4ade80;
+  --app-success-soft: rgba(74, 222, 128, 0.12);
+  --app-success-border: rgba(74, 222, 128, 0.28);
+  --app-error: #f87171;
+  --app-error-soft: rgba(248, 113, 113, 0.12);
+  --app-error-border: rgba(248, 113, 113, 0.28);
+  --app-hero-from: #3d4f6f;
+  --app-hero-to: #2a3148;
 }
 
 * {
@@ -16,8 +75,9 @@ body {
 
 body {
   font-family: var(--font-sans);
-  background-color: #f5f6f8;
-  color: #0f172a;
+  background-color: var(--app-bg);
+  color: var(--app-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
