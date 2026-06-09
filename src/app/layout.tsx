@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/theme/theme-provider";
 import { UsernameGate } from "@/components/user/username-gate";
 import "./globals.css";
 
@@ -16,9 +15,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" data-theme="sun">
       <body>
-        <ThemeProvider>
-          <UsernameGate>{children}</UsernameGate>
-        </ThemeProvider>
+        <UsernameGate>{children}</UsernameGate>
       </body>
     </html>
   );

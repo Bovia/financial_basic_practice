@@ -52,7 +52,7 @@ const AUTO_NEXT_DELAY_MS = 600;
 export function PracticeClient({ paperId, progressId, questions }: PracticeClientProps) {
   const router = useRouter();
   const { username, isReady: userReady } = useUser();
-  const { examMode, autoNext, setExamMode, isReady: settingsReady } = useUserSettings();
+  const { examMode, autoNext, isReady: settingsReady } = useUserSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<ProgressDetail["answers"]>([]);
   const [localSelections, setLocalSelections] = useState<Record<number, string>>({});
@@ -62,6 +62,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   const [saving, setSaving] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const hasLoadedRef = useRef(false);
+  const prevExamModeRef = useRef(examMode);
   const autoNextTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalQuestions = questions.length;
@@ -153,14 +154,12 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     persistDraft(currentIndex, localSelections, revealedIndices);
   }, [loading, currentIndex, localSelections, revealedIndices, persistDraft]);
 
-  async function handleExamModeChange(enabled: boolean) {
-    const ok = await setExamMode(enabled);
-    if (!ok) return;
-
-    if (!enabled) {
+  useEffect(() => {
+    if (prevExamModeRef.current && !examMode) {
       revealAnsweredQuestions();
     }
-  }
+    prevExamModeRef.current = examMode;
+  }, [examMode, revealAnsweredQuestions]);
 
   function getSelection(index: number) {
     return localSelections[index] ?? answers[index]?.selectedAnswer ?? null;
@@ -434,10 +433,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
             第{currentIndex + 1}题 / {totalQuestions}
           </h1>
           <div className="flex items-center gap-1">
-            <UserSettingsDialog
-              onExamModeChange={handleExamModeChange}
-              iconClassName="h-9 w-9"
-            />
+            <UserSettingsDialog iconClassName="h-9 w-9" />
             <Button variant="icon" size="icon" onClick={() => setSheetOpen(true)}>
               <LayoutGrid className="h-5 w-5" />
             </Button>

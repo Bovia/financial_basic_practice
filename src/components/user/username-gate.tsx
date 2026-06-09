@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserSettingsProvider } from "@/components/settings/user-settings-provider";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { useUser } from "@/hooks/use-user";
 
 type UsernameGateProps = {
@@ -24,7 +26,11 @@ export function UsernameGate({ children }: UsernameGateProps) {
   }
 
   if (username) {
-    return <>{children}</>;
+    return (
+      <UserSettingsProvider>
+        <ThemeProvider>{children}</ThemeProvider>
+      </UserSettingsProvider>
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {

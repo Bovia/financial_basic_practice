@@ -8,22 +8,12 @@ import { useUserSettings } from "@/hooks/use-user-settings";
 import { cn } from "@/lib/utils";
 
 type UserSettingsDialogProps = {
-  onExamModeChange?: (enabled: boolean) => void | Promise<void>;
   iconClassName?: string;
 };
 
-export function UserSettingsDialog({ onExamModeChange, iconClassName }: UserSettingsDialogProps) {
+export function UserSettingsDialog({ iconClassName }: UserSettingsDialogProps) {
   const { examMode, autoNext, theme, updating, setExamMode, setTheme, updateSettings } =
     useUserSettings();
-
-  async function handleExamModeChange(enabled: boolean) {
-    if (onExamModeChange) {
-      await onExamModeChange(enabled);
-      return;
-    }
-
-    await setExamMode(enabled);
-  }
 
   return (
     <Dialog.Root>
@@ -62,7 +52,7 @@ export function UserSettingsDialog({ onExamModeChange, iconClassName }: UserSett
               label="考试模式"
               description="开启后不揭晓答案，交卷后统一出分"
               checked={examMode}
-              onChange={handleExamModeChange}
+              onChange={(enabled) => void setExamMode(enabled)}
               disabled={updating}
             />
             <SettingSwitch
