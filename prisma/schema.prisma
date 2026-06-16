@@ -24,6 +24,7 @@ model PaperProgress {
   currentQuestionIndex Int      @default(0)
   completed            Boolean  @default(false)
   score                Int?
+  questionIds          Json?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

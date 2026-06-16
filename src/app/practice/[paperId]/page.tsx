@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { PracticeClient } from "@/components/practice/practice-client";
+import { prisma } from "@/lib/prisma";
+import { getProgressQuestions, parseProgressQuestionIds } from "@/lib/progress-questions";
 import { getPaper } from "@/lib/questions";
 
 type PracticePageProps = {
@@ -23,11 +25,26 @@ export default async function PracticePage({ params, searchParams }: PracticePag
     notFound();
   }
 
+  const progress = await prisma.paperProgress.findUnique({
+    where: { id: progressId },
+  });
+
+  if (!progress || progress.paperId !== paperId) {
+    notFound();
+  }
+
+  const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+  const questions = getProgressQuestions(paperId, progressQuestionIds);
+
+  if (questions.length === 0) {
+    notFound();
+  }
+
   return (
     <PracticeClient
       paperId={paperId}
       progressId={progressId}
-      questions={paper.questions.map((q) => ({
+      questions={questions.map((q) => ({
         id: q.id,
         type: q.type,
         title: q.title,

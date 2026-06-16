@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPaperTotalQuestions } from "@/lib/questions";
+import {
+  getProgressTotalQuestions,
+  parseProgressQuestionIds,
+} from "@/lib/progress-questions";
 import { getOrCreateUser } from "@/lib/user";
 
 export async function POST(request: NextRequest) {
@@ -26,7 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Progress not found" }, { status: 404 });
     }
 
-    const totalQuestions = getPaperTotalQuestions(progress.paperId);
+    const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+    const totalQuestions = getProgressTotalQuestions(progress.paperId, progressQuestionIds);
     const correctCount = progress.practiceRecords.filter((r) => r.isCorrect).length;
 
     const updated = await prisma.paperProgress.update({
@@ -34,7 +38,7 @@ export async function POST(request: NextRequest) {
       data: {
         completed: true,
         score: correctCount,
-        currentQuestionIndex: totalQuestions - 1,
+        currentQuestionIndex: Math.max(totalQuestions - 1, 0),
       },
     });
 

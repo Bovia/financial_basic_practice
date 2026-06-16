@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPaperTotalQuestions, isAnswerCorrect } from "@/lib/questions";
+import {
+  getProgressTotalQuestions,
+  parseProgressQuestionIds,
+} from "@/lib/progress-questions";
+import { isAnswerCorrect } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
 
 export async function POST(request: NextRequest) {
@@ -76,7 +80,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const totalQuestions = getPaperTotalQuestions(paperId);
+    const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+    const totalQuestions = getProgressTotalQuestions(paperId, progressQuestionIds);
     let score: number | null = progress.score;
 
     if (complete) {

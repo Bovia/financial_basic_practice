@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  getProgressQuestions,
+  parseProgressQuestionIds,
+} from "@/lib/progress-questions";
 import { getPaper } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
 
@@ -35,10 +39,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
 
-    const totalQuestions = paper.questions.length;
+    const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+    const questions = getProgressQuestions(progress.paperId, progressQuestionIds);
+    const totalQuestions = questions.length;
     let correctCount = 0;
 
-    const answers = paper.questions.map((question, index) => {
+    const answers = questions.map((question, index) => {
       const record = progress.practiceRecords.find((r) => r.questionId === question.id);
       const selectedAnswer = record?.selectedAnswer ?? null;
       const isCorrect = record?.isCorrect ?? false;

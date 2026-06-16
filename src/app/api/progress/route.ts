@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPaper, getPaperTotalQuestions } from "@/lib/questions";
+import {
+  getProgressQuestions,
+  getProgressTotalQuestions,
+  normalizeProgressQuestionIds,
+  parseProgressQuestionIds,
+} from "@/lib/progress-questions";
+import { getPaper } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
 import type { AnswerRecord } from "@/types/question";
 
@@ -10,9 +16,10 @@ export async function POST(request: NextRequest) {
       username?: string;
       paperId?: number;
       restart?: boolean;
+      questionIds?: number[];
     };
 
-    const { username, paperId, restart } = body;
+    const { username, paperId, restart, questionIds } = body;
 
     if (!username || typeof paperId !== "number") {
       return NextResponse.json({ error: "username and paperId are required" }, { status: 400 });
@@ -24,6 +31,11 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getOrCreateUser(username);
+    const normalizedQuestionIds = normalizeProgressQuestionIds(paperId, questionIds);
+
+    if (questionIds && questionIds.length > 0 && !normalizedQuestionIds) {
+      return NextResponse.json({ error: "No valid questionIds provided" }, { status: 400 });
+    }
 
     if (restart) {
       const progress = await prisma.paperProgress.create({
@@ -32,13 +44,27 @@ export async function POST(request: NextRequest) {
           paperId,
           currentQuestionIndex: 0,
           completed: false,
+          questionIds: normalizedQuestionIds ?? undefined,
+        },
+      });
+      return NextResponse.json({ progressId: progress.id, currentQuestionIndex: 0 });
+    }
+
+    if (normalizedQuestionIds) {
+      const progress = await prisma.paperProgress.create({
+        data: {
+          userId: user.id,
+          paperId,
+          currentQuestionIndex: 0,
+          completed: false,
+          questionIds: normalizedQuestionIds,
         },
       });
       return NextResponse.json({ progressId: progress.id, currentQuestionIndex: 0 });
     }
 
     const existing = await prisma.paperProgress.findFirst({
-      where: { userId: user.id, paperId, completed: false },
+      where: { userId: user.id, paperId, completed: false, questionIds: { equals: null } },
       orderBy: { updatedAt: "desc" },
     });
 
@@ -93,7 +119,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
     }
 
-    const answers: AnswerRecord[] = paper.questions.map((q) => {
+    const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+    const questions = getProgressQuestions(progress.paperId, progressQuestionIds);
+
+    const answers: AnswerRecord[] = questions.map((q) => {
       const record = progress.practiceRecords.find((r) => r.questionId === q.id);
       return {
         questionId: q.id,
@@ -109,7 +138,7 @@ export async function GET(request: NextRequest) {
       currentQuestionIndex: progress.currentQuestionIndex,
       completed: progress.completed,
       score: progress.score,
-      totalQuestions: getPaperTotalQuestions(progress.paperId),
+      totalQuestions: getProgressTotalQuestions(progress.paperId, progressQuestionIds),
       answers,
     });
   } catch {

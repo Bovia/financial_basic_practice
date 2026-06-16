@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight, Home, RefreshCw, Trophy } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, RefreshCw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
 import { isOptionInAnswer } from "@/lib/answer";
@@ -22,6 +22,7 @@ export function ResultClient({ progressId }: ResultClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [restarting, setRestarting] = useState(false);
+  const [startingReview, setStartingReview] = useState<"correct" | "wrong" | null>(null);
 
   useEffect(() => {
     if (!isReady || !username) return;
@@ -57,6 +58,31 @@ export function ResultClient({ progressId }: ResultClientProps) {
       router.push(`/practice/${result.paperId}?progressId=${data.progressId}`);
     }
     setRestarting(false);
+  }
+
+  async function handleReview(mode: "correct" | "wrong") {
+    if (!username || !result || startingReview) return;
+
+    const questionIds = result.answers
+      .filter((item) => (mode === "correct" ? item.isCorrect : !item.isCorrect))
+      .map((item) => item.questionId);
+
+    if (questionIds.length === 0) return;
+
+    setStartingReview(mode);
+
+    const response = await fetch("/api/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, paperId: result.paperId, questionIds }),
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as { progressId: number };
+      router.push(`/practice/${result.paperId}?progressId=${data.progressId}`);
+    }
+
+    setStartingReview(null);
   }
 
   if (loading || !result) {
@@ -219,14 +245,30 @@ export function ResultClient({ progressId }: ResultClientProps) {
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 mx-auto flex max-w-lg gap-3 border-t border-app-border bg-app-surface px-4 py-4">
-        <Button variant="outline" className="flex-1" onClick={() => router.push("/")}>
-          <Home className="h-4 w-4" />
-          返回首页
+      <div className="fixed bottom-0 left-0 right-0 mx-auto flex max-w-lg gap-2 border-t border-app-border bg-app-surface px-4 py-4">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => handleReview("correct")}
+          disabled={result.correctCount === 0 || restarting || startingReview !== null}
+        >
+          {startingReview === "correct" ? "进入中..." : "刷对题"}
         </Button>
-        <Button className="flex-1" onClick={handleRetry} disabled={restarting}>
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => handleReview("wrong")}
+          disabled={result.incorrectCount === 0 || restarting || startingReview !== null}
+        >
+          {startingReview === "wrong" ? "进入中..." : "刷错题"}
+        </Button>
+        <Button
+          className="flex-1"
+          onClick={handleRetry}
+          disabled={restarting || startingReview !== null}
+        >
           <RefreshCw className="h-4 w-4" />
-          再来一次
+          {restarting ? "进入中..." : "再来一次"}
         </Button>
       </div>
     </div>
