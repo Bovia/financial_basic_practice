@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -64,7 +65,12 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await prisma.paperProgress.findFirst({
-      where: { userId: user.id, paperId, completed: false, questionIds: { equals: null } },
+      where: {
+        userId: user.id,
+        paperId,
+        completed: false,
+        questionIds: { equals: Prisma.DbNull },
+      },
       orderBy: { updatedAt: "desc" },
     });
 
