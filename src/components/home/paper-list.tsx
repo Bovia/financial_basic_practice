@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, LogOut, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
+import { guestProgressId } from "@/lib/portfolio-embed";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import type { PaperListItem } from "@/types/question";
 
@@ -18,7 +19,7 @@ type CategoryData = {
 
 export function PaperList() {
   const router = useRouter();
-  const { username, isReady, clearUsername } = useUser();
+  const { username, isReady, clearUsername, isGuestMode, openCloudLogin } = useUser();
   const { isReady: settingsReady } = useUserSettings();
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [expandedPaperId, setExpandedPaperId] = useState<number | null>(null);
@@ -43,6 +44,11 @@ export function PaperList() {
 
   async function startPractice(paperId: number, restart = false) {
     if (!username) return;
+
+    if (isGuestMode) {
+      router.push(`/practice/${paperId}?progressId=${guestProgressId(paperId)}`);
+      return;
+    }
 
     const response = await fetch("/api/progress", {
       method: "POST",
@@ -76,11 +82,11 @@ export function PaperList() {
               </span>
               <button
                 type="button"
-                onClick={clearUsername}
+                onClick={() => (isGuestMode ? openCloudLogin() : clearUsername())}
                 className="flex items-center gap-0.5 text-app-accent-text hover:underline"
               >
                 <LogOut className="h-3 w-3" />
-                切换用户
+                {isGuestMode ? "登录云同步" : "切换用户"}
               </button>
             </div>
           )}

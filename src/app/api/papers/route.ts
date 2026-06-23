@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCategories, getPaperTotalQuestions } from "@/lib/questions";
-import { getOrCreateUser } from "@/lib/user";
+import { getOrCreateUser, isGuestUsername } from "@/lib/user";
 import type { HistoryRecord, PaperListItem, PaperStatus } from "@/types/question";
 
 export async function GET(request: NextRequest) {
@@ -9,6 +9,25 @@ export async function GET(request: NextRequest) {
     const username = request.nextUrl.searchParams.get("username");
     if (!username) {
       return NextResponse.json({ error: "username is required" }, { status: 400 });
+    }
+
+    if (isGuestUsername(username)) {
+      const categories = getCategories();
+      const result = categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        paperCount: category.papers.length,
+        papers: category.papers.map((paper) => ({
+          id: paper.id,
+          name: paper.name,
+          totalQuestions: getPaperTotalQuestions(paper.id),
+          status: "not_started" as PaperStatus,
+          answeredCount: 0,
+          progressId: null,
+          history: [],
+        })),
+      }));
+      return NextResponse.json(result);
     }
 
     const user = await getOrCreateUser(username);

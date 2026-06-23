@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { isGuestUsername } from "@/lib/portfolio-embed";
+
+export { GUEST_USERNAME, isGuestUsername } from "@/lib/portfolio-embed";
 
 const USERNAME_MIN = 2;
 const USERNAME_MAX = 20;
@@ -10,6 +13,10 @@ export function normalizeUsername(input: string): string {
 
 export function validateUsername(input: string): string | null {
   const username = normalizeUsername(input);
+
+  if (isGuestUsername(username)) {
+    return "请使用其他用户名";
+  }
 
   if (username.length < USERNAME_MIN || username.length > USERNAME_MAX) {
     return `用户名长度为 ${USERNAME_MIN}-${USERNAME_MAX} 个字符`;
@@ -24,6 +31,9 @@ export function validateUsername(input: string): string | null {
 
 export async function getOrCreateUser(usernameInput: string) {
   const username = normalizeUsername(usernameInput);
+  if (isGuestUsername(username)) {
+    throw new Error("Guest user cannot be persisted");
+  }
   const error = validateUsername(username);
   if (error) {
     throw new Error(error);

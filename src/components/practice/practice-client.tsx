@@ -10,6 +10,8 @@ import { OptionCard } from "@/components/practice/option-card";
 import { AnswerRecordSheet } from "@/components/practice/answer-record-sheet";
 import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
+import { isGuestProgressId } from "@/lib/portfolio-embed";
+import { loadGuestProgress, saveGuestProgress } from "@/lib/guest-progress";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import {
   isAnswerMatch,
@@ -108,6 +110,25 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     async (hideReveal: boolean) => {
       if (!username) return;
 
+      if (isGuestProgressId(progressId)) {
+        const data = loadGuestProgress(progressId, paperId, "", totalQuestions);
+        const draft = loadPracticeDraft(progressId);
+        const mergedSelections: Record<number, string> = { ...draft?.selections };
+        const mergedRevealed = new Set<number>();
+        if (!hideReveal) {
+          data.answers.forEach((answer, index) => {
+            if (answer.selectedAnswer) mergedRevealed.add(index);
+          });
+          draft?.revealed.forEach((index) => mergedRevealed.add(index));
+        }
+        setCurrentIndex(draft?.currentIndex ?? data.currentQuestionIndex);
+        setAnswers(data.answers);
+        setLocalSelections(mergedSelections);
+        setRevealedIndices(mergedRevealed);
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(
         `/api/progress?username=${encodeURIComponent(username)}&progressId=${progressId}`
       );
@@ -134,7 +155,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
       setRevealedIndices(mergedRevealed);
       setLoading(false);
     },
-    [username, progressId]
+    [username, progressId, paperId, totalQuestions]
   );
 
   useEffect(() => {
@@ -286,6 +307,30 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     complete?: boolean;
   }) {
     if (!username) return false;
+
+    if (isGuestProgressId(progressId)) {
+      const nextAnswers = [...answers];
+      for (const item of options.batch ?? []) {
+        const idx = questions.findIndex((q) => q.id === item.questionId);
+        if (idx >= 0) {
+          nextAnswers[idx] = {
+            questionId: item.questionId,
+            selectedAnswer: item.selectedAnswer,
+            isCorrect: isAnswerMatch(item.selectedAnswer, questions[idx]?.answer ?? ""),
+          };
+        }
+      }
+      setAnswers(nextAnswers);
+      saveGuestProgress(progressId, {
+        answers: nextAnswers,
+        currentQuestionIndex:
+          typeof options.currentQuestionIndex === "number"
+            ? options.currentQuestionIndex
+            : currentIndex,
+      });
+      if (options.complete) clearPracticeDraft(progressId);
+      return true;
+    }
 
     const batch = options.batch ?? [];
     if (batch.length === 0 && typeof options.currentQuestionIndex !== "number" && !options.complete) {

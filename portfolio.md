@@ -1,6 +1,7 @@
 ---
 title: 金融基础刷题系统
 description: 轻量在线刷题，支持考试模式、错题重练与进度跨设备同步
+published: true
 tags:
   - Next.js
   - TypeScript

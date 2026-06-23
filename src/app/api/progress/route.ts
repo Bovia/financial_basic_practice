@@ -8,7 +8,7 @@ import {
   parseProgressQuestionIds,
 } from "@/lib/progress-questions";
 import { getPaper } from "@/lib/questions";
-import { getOrCreateUser } from "@/lib/user";
+import { getOrCreateUser, isGuestUsername } from "@/lib/user";
 import type { AnswerRecord } from "@/types/question";
 
 export async function POST(request: NextRequest) {
@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
 
     if (!username || typeof paperId !== "number") {
       return NextResponse.json({ error: "username and paperId are required" }, { status: 400 });
+    }
+
+    if (isGuestUsername(username)) {
+      return NextResponse.json({ error: "Guest mode uses local storage only" }, { status: 403 });
     }
 
     const paper = getPaper(paperId);
