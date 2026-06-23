@@ -9,7 +9,8 @@ tags:
 demoUrl: https://financial-basic-practice.vercel.app
 githubUrl: https://github.com/Bovia/financial_basic_practice
 date: 2026-06
-responsive: "false"
+devices:
+  - mobile
 ---
 
 ## 为什么做这个
