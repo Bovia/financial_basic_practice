@@ -47,8 +47,17 @@ function parseAppExportMd(content: string): ParsedPaper {
   const lines = content.split(/\r?\n/);
   let index = 0;
 
-  while (index < lines.length && !lines[index].trim()) {
-    index++;
+  while (index < lines.length) {
+    const line = lines[index]?.trim();
+    if (!line) {
+      index++;
+      continue;
+    }
+    if (/^#{1,6}(\s|$)/.test(line)) {
+      index++;
+      continue;
+    }
+    break;
   }
 
   const paperName = lines[index]?.trim();
@@ -93,6 +102,8 @@ function parseAppExportMd(content: string): ParsedPaper {
   }
 
   function readAnswer(): string {
+    let seenCorrectHeader = false;
+
     while (index < lines.length) {
       skipBlank();
       if (index >= lines.length) break;
@@ -102,22 +113,39 @@ function parseAppExportMd(content: string): ParsedPaper {
         throw new Error(`第 ${questions.length + 1} 题未找到正确答案`);
       }
 
+      const plain = stripBold(line);
+
+      if (plain === "作答结果：") {
+        index++;
+        continue;
+      }
+
+      if (plain === "正确答案：") {
+        seenCorrectHeader = true;
+        index++;
+        continue;
+      }
+
+      if (plain === "得分：" || /^\d+$/.test(plain)) {
+        index++;
+        continue;
+      }
+
+      if (!seenCorrectHeader) {
+        index++;
+        continue;
+      }
+
       const boldMatch = line.match(BOLD_ANSWER_RE);
       if (boldMatch) {
         index++;
         return boldMatch[1];
       }
 
-      const plain = stripBold(line);
       const inlineMatch = plain.match(/^正确答案：([A-D]+)$/);
       if (inlineMatch) {
         index++;
         return inlineMatch[1];
-      }
-
-      if (plain === "正确答案：" || plain === "作答结果：" || plain === "得分：" || /^\d+$/.test(plain)) {
-        index++;
-        continue;
       }
 
       index++;
@@ -201,6 +229,10 @@ function parseAppExportMd(content: string): ParsedPaper {
       }
       if (OPTION_RE.test(titleLine) || SECTION_RE.test(titleLine) || isFooter(titleLine)) {
         break;
+      }
+      if (QUESTION_NUM_RE.test(titleLine)) {
+        index++;
+        continue;
       }
       titleParts.push(titleLine);
       index++;
