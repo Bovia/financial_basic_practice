@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { getSprintCheer, getSprintTheme } from "@/lib/sprint";
+import { getSprintCheer, getSprintTheme, type SprintTheme } from "@/lib/sprint";
 import { cn } from "@/lib/utils";
 
 type SprintAwardProps = {
@@ -16,82 +16,158 @@ type SprintAwardProps = {
   onRest: () => void;
 };
 
-const THEME_STYLES = {
-  blue: {
-    rays: "from-[#2E5A88] via-[#3D6A99] to-[#2E5A88]",
-    accent: "text-[#F1C40F]",
-    cup: "from-[#F1C40F] to-[#E6A800]",
-    base: "bg-[#5D2E1D]",
+const THEME_STYLES: Record<
+  SprintTheme,
+  {
+    rays: [string, string];
+    accent: string;
+    accentMuted: string;
+    buttonPrimary: string;
+    buttonOutline: string;
+  }
+> = {
+  pink: {
+    rays: ["#9B1459", "#D63384"],
+    accent: "text-[#FFF0A8]",
+    accentMuted: "text-white/85",
+    buttonPrimary: "bg-white text-[#9B1459] hover:bg-white/90",
+    buttonOutline: "border-white/50 bg-white/15 text-white hover:bg-white/25",
   },
-  green: {
-    rays: "from-[#1B4332] via-[#2D6A4F] to-[#1B4332]",
-    accent: "text-[#FFD166]",
-    cup: "from-[#FFD166] to-[#F4A261]",
-    base: "bg-[#4A2C20]",
+  orange: {
+    rays: ["#C65D00", "#FF9F1C"],
+    accent: "text-[#FFF8E7]",
+    accentMuted: "text-white/90",
+    buttonPrimary: "bg-white text-[#C65D00] hover:bg-white/90",
+    buttonOutline: "border-white/50 bg-white/15 text-white hover:bg-white/25",
   },
   purple: {
-    rays: "from-[#3D2C5E] via-[#5B4B8A] to-[#3D2C5E]",
-    accent: "text-[#FFE066]",
-    cup: "from-[#FFE066] to-[#F5C842]",
-    base: "bg-[#4A2C20]",
+    rays: ["#4C1D95", "#7C3AED"],
+    accent: "text-[#FFE566]",
+    accentMuted: "text-white/85",
+    buttonPrimary: "bg-white text-[#5B21B6] hover:bg-white/90",
+    buttonOutline: "border-white/50 bg-white/15 text-white hover:bg-white/25",
   },
 };
 
-function CssTrophy({ theme }: { theme: keyof typeof THEME_STYLES }) {
-  const styles = THEME_STYLES[theme];
+function sunburstBackground(colorA: string, colorB: string) {
+  return `repeating-conic-gradient(from 0deg, ${colorA} 0deg 12deg, ${colorB} 12deg 24deg)`;
+}
 
+function SvgTrophy() {
   return (
-    <div className="relative mx-auto mb-6 h-36 w-36 animate-in zoom-in-95 duration-500">
+    <div className="relative mb-8 animate-in zoom-in-90 fade-in duration-700">
       <div
-        className={cn(
-          "absolute inset-x-6 bottom-0 h-5 rounded-sm",
-          styles.base,
-          "shadow-[0_4px_0_rgba(0,0,0,0.25)]"
-        )}
+        className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#FFD54F]/25 blur-2xl"
+        aria-hidden
       />
-      <div
-        className={cn(
-          "absolute inset-x-10 bottom-5 h-4 rounded-sm",
-          styles.base,
-          "opacity-90"
-        )}
-      />
-      <div className="absolute inset-x-[4.75rem] bottom-9 h-10 w-2 rounded-sm bg-gradient-to-b from-[#F1C40F] to-[#E6A800]" />
-      <div
-        className={cn(
-          "absolute inset-x-8 top-6 h-16 rounded-t-full rounded-b-lg bg-gradient-to-br shadow-lg",
-          styles.cup
-        )}
+      <svg
+        viewBox="0 0 160 180"
+        className="relative mx-auto h-44 w-44 drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)]"
+        aria-hidden
       >
-        <div className="absolute top-2 right-3 h-10 w-2 rounded-full bg-white/45" />
-      </div>
-      <div className="absolute top-10 -left-1 h-10 w-8 rounded-l-full border-[6px] border-[#E6A800] border-r-0" />
-      <div className="absolute top-10 -right-1 h-10 w-8 rounded-r-full border-[6px] border-[#E6A800] border-l-0" />
-      <div className="absolute inset-x-[3.75rem] bottom-[1.35rem] h-2 rounded bg-white/90" />
+        <defs>
+          <linearGradient id="trophyGold" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stopColor="#FFF3B0" />
+            <stop offset="35%" stopColor="#FFD54F" />
+            <stop offset="70%" stopColor="#F5B800" />
+            <stop offset="100%" stopColor="#C88700" />
+          </linearGradient>
+          <linearGradient id="trophyGoldDark" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFE082" />
+            <stop offset="100%" stopColor="#E6A800" />
+          </linearGradient>
+          <linearGradient id="trophyBase" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#A0522D" />
+            <stop offset="100%" stopColor="#5D2E17" />
+          </linearGradient>
+          <linearGradient id="trophyShine" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        <ellipse cx="80" cy="168" rx="52" ry="8" fill="#000" opacity="0.18" />
+
+        <rect x="48" y="148" width="64" height="14" rx="4" fill="url(#trophyBase)" />
+        <rect x="56" y="136" width="48" height="12" rx="3" fill="url(#trophyBase)" />
+        <rect x="72" y="112" width="16" height="26" rx="3" fill="url(#trophyGoldDark)" />
+
+        <path
+          d="M48 108 C48 56 64 28 80 24 C96 28 112 56 112 108 C112 118 98 126 80 128 C62 126 48 118 48 108 Z"
+          fill="url(#trophyGold)"
+        />
+        <path
+          d="M48 108 C48 56 64 28 80 24 C96 28 112 56 112 108 C112 118 98 126 80 128 C62 126 48 118 48 108 Z"
+          fill="url(#trophyShine)"
+          opacity="0.35"
+        />
+
+        <path
+          d="M48 72 C28 72 22 88 26 100 C30 110 42 112 48 106"
+          fill="none"
+          stroke="url(#trophyGoldDark)"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+        <path
+          d="M112 72 C132 72 138 88 134 100 C130 110 118 112 112 106"
+          fill="none"
+          stroke="url(#trophyGoldDark)"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+
+        <path
+          d="M58 118 L102 118 L98 128 L62 128 Z"
+          fill="#FFF8E1"
+          opacity="0.92"
+        />
+        <rect x="76" y="120" width="8" height="6" rx="1" fill="#C88700" opacity="0.5" />
+
+        <polygon
+          points="80,8 83,16 92,16 85,21 88,30 80,25 72,30 75,21 68,16 77,16"
+          fill="#FFF8E1"
+          stroke="#F5B800"
+          strokeWidth="1"
+        />
+      </svg>
     </div>
   );
 }
 
-function Confetti() {
-  const dots = [
-    "left-[12%] top-[18%] bg-[#F1C40F]",
-    "left-[22%] top-[72%] bg-white/80",
-    "left-[78%] top-[24%] bg-[#FFD166]",
-    "left-[86%] top-[68%] bg-[#F1C40F]",
-    "left-[48%] top-[12%] bg-white/70",
-    "left-[62%] top-[80%] bg-[#FFE066]",
-  ];
+function Confetti({ theme }: { theme: SprintTheme }) {
+  const palette =
+    theme === "pink"
+      ? ["#FFF0A8", "#FFFFFF", "#FFB8D9", "#FFE566"]
+      : theme === "orange"
+        ? ["#FFF8E7", "#FFFFFF", "#FFD166", "#FF6B35"]
+        : ["#FFE566", "#FFFFFF", "#C4B5FD", "#FDE68A"];
+
+  const pieces = Array.from({ length: 18 }, (_, index) => ({
+    left: `${8 + ((index * 17) % 84)}%`,
+    top: `${6 + ((index * 23) % 78)}%`,
+    size: index % 3 === 0 ? 10 : index % 3 === 1 ? 6 : 8,
+    color: palette[index % palette.length],
+    delay: `${index * 90}ms`,
+    rotate: `${(index * 37) % 360}deg`,
+  }));
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {dots.map((className, index) => (
+      {pieces.map((piece, index) => (
         <span
           key={index}
-          className={cn(
-            "absolute h-2 w-2 rounded-full opacity-80 animate-bounce",
-            className
-          )}
-          style={{ animationDelay: `${index * 120}ms`, animationDuration: "1.8s" }}
+          className="absolute animate-bounce rounded-full opacity-80"
+          style={{
+            left: piece.left,
+            top: piece.top,
+            width: piece.size,
+            height: piece.size,
+            backgroundColor: piece.color,
+            animationDelay: piece.delay,
+            animationDuration: `${1.6 + (index % 4) * 0.3}s`,
+            transform: `rotate(${piece.rotate})`,
+          }}
         />
       ))}
     </div>
@@ -114,49 +190,78 @@ export function SprintAward({
   const cheer = getSprintCheer(groupNumber, username);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl animate-in zoom-in-95 fade-in duration-300">
-        <div
+    <div className="fixed inset-0 z-50 flex min-h-[100dvh] flex-col overflow-hidden animate-in fade-in duration-300">
+      <div
+        className="absolute inset-0 scale-150"
+        style={{ background: sunburstBackground(styles.rays[0], styles.rays[1]) }}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/25"
+        aria-hidden
+      />
+
+      <div className="relative flex flex-1 flex-col items-center justify-center px-6 pb-36 pt-10 text-center">
+        <Confetti theme={theme} />
+        <SvgTrophy />
+
+        <p
           className={cn(
-            "relative px-6 py-8 text-center",
-            "bg-[repeating-conic-gradient(from_0deg,#2E5A88_0deg_10deg,#3D6A99_10deg_20deg)]"
+            "animate-in slide-in-from-bottom-3 text-xs font-semibold tracking-[0.25em] duration-500",
+            styles.accent
           )}
-          style={{
-            background:
-              theme === "blue"
-                ? "repeating-conic-gradient(from 0deg, #2E5A88 0deg 10deg, #3D6A99 10deg 20deg)"
-                : theme === "green"
-                  ? "repeating-conic-gradient(from 0deg, #1B4332 0deg 10deg, #2D6A4F 10deg 20deg)"
-                  : "repeating-conic-gradient(from 0deg, #3D2C5E 0deg 10deg, #5B4B8A 10deg 20deg)",
-          }}
         >
-          <Confetti />
-          <CssTrophy theme={theme} />
-
-          <p className={cn("text-xs font-semibold uppercase tracking-[0.2em]", styles.accent)}>
-            {allDone ? "冲刺完成" : `第 ${groupNumber} 组完成`}
-          </p>
-          <h1 className={cn("mt-2 text-3xl font-bold leading-tight", styles.accent)}>{cheer}</h1>
-          <p className="mt-3 text-sm text-white/90">
-            本轮 {score}/{totalQuestions}
-            {!allDone && remainingPool > 0 && ` · 待巩固还剩 ${remainingPool} 题`}
-          </p>
-          {allDone && (
-            <p className="mt-2 text-sm text-white/80">待巩固题目已全部刷完，考前状态拉满了。</p>
+          {allDone ? "冲刺完成" : `第 ${groupNumber} 组完成`}
+        </p>
+        <h1
+          className={cn(
+            "mt-3 max-w-xs animate-in slide-in-from-bottom-4 text-4xl font-bold leading-tight duration-700",
+            styles.accent
           )}
-        </div>
+        >
+          {cheer}
+        </h1>
+        <p className={cn("mt-4 text-base", styles.accentMuted)}>
+          本轮 {score}/{totalQuestions}
+          {!allDone && remainingPool > 0 && ` · 待巩固还剩 ${remainingPool} 题`}
+        </p>
+        {allDone && (
+          <p className={cn("mt-2 max-w-xs text-sm", styles.accentMuted)}>
+            待巩固题目已全部刷完，考前状态拉满了。
+          </p>
+        )}
+      </div>
 
-        <div className="flex gap-2 bg-app-surface p-4">
+      <div className="relative px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="mx-auto flex w-full max-w-md gap-3">
           {allDone ? (
-            <Button className="w-full" onClick={onRest}>
+            <Button
+              className={cn("h-12 flex-1 rounded-2xl border-0 text-base font-semibold", styles.buttonPrimary)}
+              onClick={onRest}
+            >
               回首页
             </Button>
           ) : (
             <>
-              <Button variant="outline" className="flex-1" onClick={onRest} disabled={loadingNext}>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-12 flex-1 rounded-2xl border text-base font-semibold backdrop-blur-sm",
+                  styles.buttonOutline
+                )}
+                onClick={onRest}
+                disabled={loadingNext}
+              >
                 先休息
               </Button>
-              <Button className="flex-1" onClick={onNextGroup} disabled={loadingNext}>
+              <Button
+                className={cn(
+                  "h-12 flex-1 rounded-2xl border-0 text-base font-semibold shadow-lg",
+                  styles.buttonPrimary
+                )}
+                onClick={onNextGroup}
+                disabled={loadingNext}
+              >
                 {loadingNext ? "准备中..." : "下一组"}
               </Button>
             </>

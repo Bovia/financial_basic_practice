@@ -106,8 +106,10 @@ export function getSprintCheer(groupNumber: number, username: string): string {
   return `${username}，${cheer}`;
 }
 
-export function getSprintTheme(groupNumber: number): "blue" | "green" | "purple" {
-  const themes: Array<"blue" | "green" | "purple"> = ["blue", "green", "purple"];
+export type SprintTheme = "pink" | "orange" | "purple";
+
+export function getSprintTheme(groupNumber: number): SprintTheme {
+  const themes: SprintTheme[] = ["pink", "orange", "purple"];
   return themes[(groupNumber - 1) % themes.length];
 }
 
