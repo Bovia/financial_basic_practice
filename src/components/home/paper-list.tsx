@@ -240,9 +240,7 @@ export function PaperList() {
                       <p className="text-sm text-app-text-secondary">
                         {paper.status === "not_started" && "未开始"}
                         {paper.status === "in_progress" && (
-                          <span className="font-medium text-app-accent-text">
-                            {paper.answeredCount}/{paper.totalQuestions}
-                          </span>
+                          <>进行中 {paper.answeredCount}/{paper.totalQuestions}</>
                         )}
                         {paper.status === "completed" && (
                           <span className="font-medium text-app-success">
