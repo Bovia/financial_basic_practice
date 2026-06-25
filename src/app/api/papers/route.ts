@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
       name: category.name,
       paperCount: category.papers.length,
       papers: category.papers.map((paper) => {
-        const paperProgresses = allProgress.filter((p) => p.paperId === paper.id);
+        const paperProgresses = allProgress.filter(
+          (p) => p.paperId === paper.id && p.kind === "paper"
+        );
         const activeProgress = paperProgresses.find((p) => !p.completed);
         const completedProgresses = paperProgresses.filter((p) => p.completed);
         const totalQuestions = getPaperTotalQuestions(paper.id);

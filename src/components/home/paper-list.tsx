@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, LogOut, Play } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, Play, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
@@ -17,13 +17,24 @@ type CategoryData = {
   papers: PaperListItem[];
 };
 
+type SprintStatus = {
+  available: boolean;
+  unmasteredCount: number;
+  completedGroups: number;
+  activeProgressId: number | null;
+  activeGroupNumber: number | null;
+};
+
 export function PaperList() {
   const router = useRouter();
   const { username, isReady, clearUsername, isGuestMode, openCloudLogin } = useUser();
   const { isReady: settingsReady } = useUserSettings();
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [sprintStatus, setSprintStatus] = useState<SprintStatus | null>(null);
   const [expandedPaperId, setExpandedPaperId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [startingSprint, setStartingSprint] = useState(false);
+  const [sprintDoneMessage, setSprintDoneMessage] = useState("");
 
   useEffect(() => {
     if (!isReady || !username) return;
@@ -31,10 +42,16 @@ export function PaperList() {
     async function load() {
       const name = username;
       if (!name) return;
-      const response = await fetch(`/api/papers?username=${encodeURIComponent(name)}`);
-      if (response.ok) {
-        const data = (await response.json()) as CategoryData[];
+      const [papersRes, sprintRes] = await Promise.all([
+        fetch(`/api/papers?username=${encodeURIComponent(name)}`),
+        fetch(`/api/sprint/status?username=${encodeURIComponent(name)}`),
+      ]);
+      if (papersRes.ok) {
+        const data = (await papersRes.json()) as CategoryData[];
         setCategories(data);
+      }
+      if (sprintRes.ok) {
+        setSprintStatus((await sprintRes.json()) as SprintStatus);
       }
       setLoading(false);
     }
@@ -59,6 +76,46 @@ export function PaperList() {
     if (!response.ok) return;
     const data = (await response.json()) as { progressId: number };
     router.push(`/practice/${paperId}?progressId=${data.progressId}`);
+  }
+
+  async function startSprint() {
+    if (!username || startingSprint) return;
+
+    if (isGuestMode) {
+      openCloudLogin();
+      return;
+    }
+
+    if (sprintStatus?.activeProgressId) {
+      router.push(`/sprint?progressId=${sprintStatus.activeProgressId}`);
+      return;
+    }
+
+    setStartingSprint(true);
+    setSprintDoneMessage("");
+
+    const response = await fetch("/api/sprint/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+
+    const data = (await response.json()) as {
+      progressId?: number;
+      completed?: boolean;
+      message?: string;
+    };
+
+    setStartingSprint(false);
+
+    if (data.progressId) {
+      router.push(`/sprint?progressId=${data.progressId}`);
+      return;
+    }
+
+    if (data.completed) {
+      setSprintDoneMessage(data.message ?? "待巩固题目已全部刷完！");
+    }
   }
 
   if (loading || !settingsReady) {
@@ -96,11 +153,43 @@ export function PaperList() {
 
       {categories.map((category) => (
         <section key={category.id} className="mb-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="h-5 w-1 rounded-full bg-app-accent" />
-            <h2 className="text-lg font-bold text-app-text">{category.name}</h2>
-            <span className="text-sm text-app-text-muted">{category.paperCount}套</span>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-1 rounded-full bg-app-accent" />
+              <h2 className="text-lg font-bold text-app-text">{category.name}</h2>
+              <span className="text-sm text-app-text-muted">{category.paperCount}套</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 border-app-accent text-app-accent-text"
+              onClick={startSprint}
+              disabled={startingSprint}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              {startingSprint
+                ? "准备中..."
+                : sprintStatus?.activeProgressId
+                  ? "继续冲刺"
+                  : "最后冲刺"}
+            </Button>
           </div>
+
+          {sprintStatus?.available && (
+            <p className="-mt-2 mb-3 text-xs text-app-text-muted">
+              冲刺 · 已完成 {sprintStatus.completedGroups} 组 · 待巩固{" "}
+              {sprintStatus.unmasteredCount} 题
+              {sprintStatus.activeGroupNumber
+                ? ` · 第 ${sprintStatus.activeGroupNumber} 组进行中`
+                : ""}
+            </p>
+          )}
+
+          {sprintDoneMessage && (
+            <p className="-mt-2 mb-3 rounded-xl bg-app-success-soft px-3 py-2 text-xs text-app-success">
+              {sprintDoneMessage}
+            </p>
+          )}
 
           <div className="space-y-3">
             {category.papers.map((paper) => {

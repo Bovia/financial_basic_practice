@@ -21,6 +21,8 @@ model PaperProgress {
   id                   Int      @id @default(autoincrement())
   userId               Int
   paperId              Int
+  kind                 String   @default("paper")
+  sprintGroupNumber    Int?
   currentQuestionIndex Int      @default(0)
   completed            Boolean  @default(false)
   score                Int?
@@ -32,6 +34,7 @@ model PaperProgress {
   practiceRecords PracticeRecord[]
 
   @@index([userId, paperId])
+  @@index([userId, kind])
 }
 
 model PracticeRecord {
@@ -47,6 +50,7 @@ model PracticeRecord {
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   progress PaperProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
 
-  @@unique([progressId, questionId])
+  @@unique([progressId, paperId, questionId])
   @@index([userId, paperId])
+  @@index([userId, paperId, questionId])
 }

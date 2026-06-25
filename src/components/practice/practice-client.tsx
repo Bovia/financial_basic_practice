@@ -28,6 +28,7 @@ import type { AnswerOption, ProgressDetail, QuestionType } from "@/types/questio
 
 type PracticeQuestion = {
   id: number;
+  paperId?: number;
   type?: QuestionType;
   title: string;
   options: [string, string, string, string];
@@ -39,6 +40,7 @@ type PracticeClientProps = {
   paperId: number;
   progressId: number;
   questions: PracticeQuestion[];
+  sprintMeta?: { groupNumber: number };
 };
 
 const OPTION_LABELS: AnswerOption[] = ["A", "B", "C", "D"];
@@ -51,8 +53,9 @@ const TYPE_LABELS: Record<QuestionType, string> = {
 
 const AUTO_NEXT_DELAY_MS = 600;
 
-export function PracticeClient({ paperId, progressId, questions }: PracticeClientProps) {
+export function PracticeClient({ paperId, progressId, questions, sprintMeta }: PracticeClientProps) {
   const router = useRouter();
+  const isSprint = !!sprintMeta;
   const { username, isReady: userReady } = useUser();
   const { examMode, autoNext, isReady: settingsReady } = useUserSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -252,6 +255,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
 
   function applySavedAnswers(
     items: Array<{
+      paperId?: number;
       questionId: number;
       selectedAnswer: string;
       isCorrect: boolean;
@@ -259,12 +263,18 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
   ) {
     if (items.length === 0) return;
 
-    const indexByQuestionId = new Map(questions.map((question, index) => [question.id, index]));
+    const indexByKey = new Map(
+      questions.map((question, index) => [
+        `${question.paperId ?? paperId}:${question.id}`,
+        index,
+      ])
+    );
 
     setAnswers((prev) => {
       const next = [...prev];
       for (const item of items) {
-        const index = indexByQuestionId.get(item.questionId);
+        const key = `${item.paperId ?? paperId}:${item.questionId}`;
+        const index = indexByKey.get(key);
         if (index === undefined) continue;
         next[index] = {
           questionId: item.questionId,
@@ -278,7 +288,8 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     setLocalSelections((prev) => {
       const next = { ...prev };
       for (const item of items) {
-        const index = indexByQuestionId.get(item.questionId);
+        const key = `${item.paperId ?? paperId}:${item.questionId}`;
+        const index = indexByKey.get(key);
         if (index !== undefined) {
           delete next[index];
         }
@@ -294,6 +305,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         if (!selectedAnswer) return null;
         return {
           index,
+          paperId: question.paperId ?? paperId,
           questionId: question.id,
           selectedAnswer: normalizeAnswer(selectedAnswer),
         };
@@ -301,8 +313,12 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
       .filter((item): item is NonNullable<typeof item> => item !== null);
   }
 
+  function getCompletePath() {
+    return isSprint ? `/sprint/complete/${progressId}` : `/result/${progressId}`;
+  }
+
   async function saveToServer(options: {
-    batch?: Array<{ questionId: number; selectedAnswer: string }>;
+    batch?: Array<{ paperId?: number; questionId: number; selectedAnswer: string }>;
     currentQuestionIndex?: number;
     complete?: boolean;
   }) {
@@ -345,7 +361,8 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
         progressId,
         paperId,
         ...(batch.length > 0 && {
-          answers: batch.map(({ questionId, selectedAnswer }) => ({
+          answers: batch.map(({ paperId: itemPaperId, questionId, selectedAnswer }) => ({
+            paperId: itemPaperId ?? paperId,
             questionId,
             selectedAnswer,
           })),
@@ -361,6 +378,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
 
     const data = (await response.json()) as {
       savedAnswers?: Array<{
+        paperId?: number;
         questionId: number;
         selectedAnswer: string;
         isCorrect: boolean;
@@ -395,7 +413,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     setSaving(false);
 
     if (ok) {
-      router.push(`/result/${progressId}`);
+      router.push(getCompletePath());
     }
   }
 
@@ -426,7 +444,7 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
     setSaving(false);
 
     if (ok) {
-      router.push(`/result/${progressId}`);
+      router.push(getCompletePath());
     }
   }
 
@@ -475,7 +493,9 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-base font-bold text-app-text">
-            第{currentIndex + 1}题 / {totalQuestions}
+            {isSprint && sprintMeta
+              ? `冲刺 · 第${sprintMeta.groupNumber}组 · ${currentIndex + 1}/${totalQuestions}`
+              : `第${currentIndex + 1}题 / ${totalQuestions}`}
           </h1>
           <div className="flex items-center gap-1">
             <UserSettingsDialog iconClassName="h-9 w-9" />
@@ -489,7 +509,9 @@ export function PracticeClient({ paperId, progressId, questions }: PracticeClien
           <span className="rounded-full bg-app-accent-soft px-2 py-0.5 text-xs font-medium text-app-accent-text">
             {TYPE_LABELS[questionType]}
           </span>
-          {examMode ? (
+          {isSprint ? (
+            <span className="text-xs text-app-text-secondary">待巩固专项 · 答对即掌握</span>
+          ) : examMode ? (
             <span className="text-xs text-app-text-secondary">考试模式：交卷后出分</span>
           ) : (
             isMultiple &&

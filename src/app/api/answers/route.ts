@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const record = await prisma.practiceRecord.upsert({
       where: {
-        progressId_questionId: { progressId, questionId },
+        progressId_paperId_questionId: { progressId, paperId, questionId },
       },
       create: {
         userId: user.id,

@@ -7,6 +7,11 @@ import {
   normalizeProgressQuestionIds,
   parseProgressQuestionIds,
 } from "@/lib/progress-questions";
+import {
+  getQuestionsFromRefs,
+  parseQuestionRefs,
+  SPRINT_PAPER_ID,
+} from "@/lib/sprint";
 import { getPaper } from "@/lib/questions";
 import { getOrCreateUser, isGuestUsername } from "@/lib/user";
 import type { AnswerRecord } from "@/types/question";
@@ -72,6 +77,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId: user.id,
         paperId,
+        kind: "paper",
         completed: false,
         questionIds: { equals: Prisma.DbNull },
       },
@@ -122,6 +128,36 @@ export async function GET(request: NextRequest) {
 
     if (!progress) {
       return NextResponse.json({ error: "Progress not found" }, { status: 404 });
+    }
+
+    if (progress.kind === "sprint") {
+      const refs = parseQuestionRefs(progress.questionIds) ?? [];
+      const questions = getQuestionsFromRefs(refs);
+
+      const answers: AnswerRecord[] = questions.map((q) => {
+        const record = progress.practiceRecords.find(
+          (r) => r.paperId === q.paperId && r.questionId === q.questionId
+        );
+        return {
+          questionId: q.questionId,
+          selectedAnswer: record?.selectedAnswer ?? null,
+          isCorrect: record?.isCorrect ?? null,
+        };
+      });
+
+      return NextResponse.json({
+        progressId: progress.id,
+        paperId: SPRINT_PAPER_ID,
+        paperName: `冲刺 · 第 ${progress.sprintGroupNumber ?? 1} 组`,
+        kind: "sprint",
+        sprintGroupNumber: progress.sprintGroupNumber,
+        currentQuestionIndex: progress.currentQuestionIndex,
+        completed: progress.completed,
+        score: progress.score,
+        totalQuestions: questions.length,
+        answers,
+        questionRefs: refs,
+      });
     }
 
     const paper = getPaper(progress.paperId);

@@ -4,8 +4,15 @@ import {
   getProgressTotalQuestions,
   parseProgressQuestionIds,
 } from "@/lib/progress-questions";
+import { getQuestionsFromRefs, parseQuestionRefs } from "@/lib/sprint";
 import { isAnswerCorrect } from "@/lib/questions";
 import { getOrCreateUser } from "@/lib/user";
+
+type AnswerInput = {
+  paperId?: number;
+  questionId: number;
+  selectedAnswer: string;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +22,7 @@ export async function POST(request: NextRequest) {
       paperId?: number;
       questionId?: number;
       selectedAnswer?: string;
-      answers?: Array<{ questionId: number; selectedAnswer: string }>;
+      answers?: AnswerInput[];
       currentQuestionIndex?: number;
       complete?: boolean;
     };
@@ -45,27 +52,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Progress not found or already completed" }, { status: 404 });
     }
 
-    const pendingAnswers: Array<{ questionId: number; selectedAnswer: string }> = [];
+    const isSprint = progress.kind === "sprint";
+    const pendingAnswers: Array<{ paperId: number; questionId: number; selectedAnswer: string }> =
+      [];
 
     if (Array.isArray(answerBatch) && answerBatch.length > 0) {
-      pendingAnswers.push(...answerBatch);
+      for (const item of answerBatch) {
+        pendingAnswers.push({
+          paperId: item.paperId ?? (isSprint ? 0 : paperId),
+          questionId: item.questionId,
+          selectedAnswer: item.selectedAnswer,
+        });
+      }
     } else if (typeof questionId === "number" && selectedAnswer) {
-      pendingAnswers.push({ questionId, selectedAnswer });
+      pendingAnswers.push({
+        paperId: isSprint ? paperId : progress.paperId,
+        questionId,
+        selectedAnswer,
+      });
+    }
+
+    if (isSprint) {
+      const refs = parseQuestionRefs(progress.questionIds) ?? [];
+      for (const item of pendingAnswers) {
+        const valid = refs.some(
+          (ref) => ref.paperId === item.paperId && ref.questionId === item.questionId
+        );
+        if (!valid) {
+          return NextResponse.json({ error: "Invalid sprint question" }, { status: 400 });
+        }
+      }
     }
 
     const savedAnswers: Array<{
+      paperId: number;
       questionId: number;
       selectedAnswer: string;
       isCorrect: boolean;
     }> = [];
 
     for (const item of pendingAnswers) {
-      const correct = isAnswerCorrect(paperId, item.questionId, item.selectedAnswer);
+      const itemPaperId = isSprint ? item.paperId : progress.paperId;
+      const correct = isAnswerCorrect(itemPaperId, item.questionId, item.selectedAnswer);
       const record = await prisma.practiceRecord.upsert({
-        where: { progressId_questionId: { progressId, questionId: item.questionId } },
+        where: {
+          progressId_paperId_questionId: {
+            progressId,
+            paperId: itemPaperId,
+            questionId: item.questionId,
+          },
+        },
         create: {
           userId: user.id,
-          paperId,
+          paperId: itemPaperId,
           progressId,
           questionId: item.questionId,
           selectedAnswer: item.selectedAnswer,
@@ -74,25 +113,39 @@ export async function POST(request: NextRequest) {
         update: { selectedAnswer: item.selectedAnswer, isCorrect: correct },
       });
       savedAnswers.push({
+        paperId: record.paperId,
         questionId: record.questionId,
         selectedAnswer: record.selectedAnswer,
         isCorrect: record.isCorrect,
       });
     }
 
-    const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
-    const totalQuestions = getProgressTotalQuestions(paperId, progressQuestionIds);
+    let totalQuestions = 0;
+    if (isSprint) {
+      totalQuestions = getQuestionsFromRefs(parseQuestionRefs(progress.questionIds) ?? []).length;
+    } else {
+      const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
+      totalQuestions = getProgressTotalQuestions(progress.paperId, progressQuestionIds);
+    }
+
     let score: number | null = progress.score;
 
     if (complete) {
-      const savedByQuestionId = new Map(savedAnswers.map((item) => [item.questionId, item]));
+      const savedByKey = new Map(
+        savedAnswers.map((item) => [`${item.paperId}:${item.questionId}`, item])
+      );
       const records = progress.practiceRecords.map((record) => {
-        const saved = savedByQuestionId.get(record.questionId);
+        const saved = savedByKey.get(`${record.paperId}:${record.questionId}`);
         return saved ? { isCorrect: saved.isCorrect } : { isCorrect: record.isCorrect };
       });
 
       for (const saved of savedAnswers) {
-        if (!progress.practiceRecords.some((record) => record.questionId === saved.questionId)) {
+        if (
+          !progress.practiceRecords.some(
+            (record) =>
+              record.paperId === saved.paperId && record.questionId === saved.questionId
+          )
+        ) {
           records.push({ isCorrect: saved.isCorrect });
         }
       }
@@ -107,7 +160,7 @@ export async function POST(request: NextRequest) {
         ...(complete && {
           completed: true,
           score: score ?? 0,
-          currentQuestionIndex: totalQuestions - 1,
+          currentQuestionIndex: Math.max(totalQuestions - 1, 0),
         }),
       },
     });
@@ -127,6 +180,7 @@ export async function POST(request: NextRequest) {
           totalQuestions > 0
             ? Math.round(((updated.score ?? 0) / totalQuestions) * 100)
             : 0,
+        isSprint,
       });
     }
 
@@ -136,6 +190,7 @@ export async function POST(request: NextRequest) {
       savedAnswers,
       currentQuestionIndex: updated.currentQuestionIndex,
       completed: updated.completed,
+      isSprint,
     });
   } catch {
     return NextResponse.json({ error: "Failed to save practice data" }, { status: 500 });
