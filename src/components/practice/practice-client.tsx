@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
-import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { OptionCard } from "@/components/practice/option-card";
@@ -455,6 +455,18 @@ export function PracticeClient({ paperId, progressId, questions, sprintMeta }: P
     ? true
     : isRevealed && !!currentAnswer;
 
+  const isLastQuestion = currentIndex === totalQuestions - 1;
+  const isSubmitting = saving && isLastQuestion;
+
+  function getNextButtonLabel() {
+    if (isSubmitting) {
+      return examMode ? "交卷中..." : "提交中...";
+    }
+    if (examMode && isLastQuestion) return "交卷";
+    if (isLastQuestion) return "完成";
+    return "下一题";
+  }
+
   function handleBackClick() {
     setExitOpen(true);
   }
@@ -591,14 +603,14 @@ export function PracticeClient({ paperId, progressId, questions, sprintMeta }: P
           type="button"
           onClick={handleNext}
           disabled={!canGoNext || saving}
-          className="flex items-center gap-1 text-sm font-medium text-app-text-secondary disabled:opacity-40"
+          className="flex min-w-[4.5rem] items-center justify-end gap-1 text-sm font-medium text-app-text-secondary disabled:opacity-40"
         >
-          {examMode && currentIndex === totalQuestions - 1
-            ? "交卷"
-            : currentIndex === totalQuestions - 1
-              ? "完成"
-              : "下一题"}
-          <ChevronRight className="h-4 w-4" />
+          {getNextButtonLabel()}
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          )}
         </button>
       </footer>
 

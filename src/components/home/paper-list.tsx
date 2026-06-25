@@ -240,13 +240,13 @@ export function PaperList() {
                       <p className="text-sm text-app-text-secondary">
                         {paper.status === "not_started" && "未开始"}
                         {paper.status === "in_progress" && (
-                          <span className="text-app-accent-text">
-                            进行中 {paper.answeredCount}/{paper.totalQuestions}
+                          <span className="font-medium text-app-accent-text">
+                            {paper.answeredCount}/{paper.totalQuestions}
                           </span>
                         )}
                         {paper.status === "completed" && (
-                          <span>
-                            已完成 {paper.history[0]?.score}/{paper.totalQuestions}
+                          <span className="font-medium text-app-success">
+                            ✓ {paper.history[0]?.score}/{paper.totalQuestions}
                           </span>
                         )}
                       </p>
@@ -290,8 +290,8 @@ export function PaperList() {
                           className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm hover:bg-app-surface"
                         >
                           <span className="text-app-text-secondary">记录{paper.history.length - index}</span>
-                          <span className="font-medium text-app-text">
-                            {record.score}/{record.totalQuestions} →
+                          <span className="font-medium text-app-success">
+                            ✓ {record.score}/{record.totalQuestions} →
                           </span>
                         </button>
                       ))}
