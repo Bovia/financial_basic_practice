@@ -115,6 +115,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "username and progressId are required" }, { status: 400 });
     }
 
+    if (isGuestUsername(username)) {
+      return NextResponse.json({ error: "Guest cannot load cloud progress" }, { status: 403 });
+    }
+
     const progressId = Number(progressIdParam);
     if (Number.isNaN(progressId)) {
       return NextResponse.json({ error: "Invalid progressId" }, { status: 400 });

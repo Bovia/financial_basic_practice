@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
         reason: "guest",
         unmasteredCount: getAllQuestionRefs().length,
         completedGroups: 0,
+        activeProgressId: null,
+        activeGroupNumber: null,
         history: [],
       });
     }

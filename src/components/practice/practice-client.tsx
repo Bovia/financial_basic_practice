@@ -135,7 +135,10 @@ export function PracticeClient({ paperId, progressId, questions, sprintMeta }: P
       const response = await fetch(
         `/api/progress?username=${encodeURIComponent(username)}&progressId=${progressId}`
       );
-      if (!response.ok) return;
+      if (!response.ok) {
+        setLoading(false);
+        return;
+      }
 
       const data = (await response.json()) as ProgressDetail;
       const draft = loadPracticeDraft(progressId);

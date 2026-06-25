@@ -27,7 +27,7 @@ type SprintStatus = {
 
 export function PaperList() {
   const router = useRouter();
-  const { username, isReady, clearUsername, isGuestMode, openCloudLogin } = useUser();
+  const { username, isReady, clearUsername, isGuestMode, isCloudLoggedIn, openCloudLogin } = useUser();
   const { isReady: settingsReady } = useUserSettings();
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [sprintStatus, setSprintStatus] = useState<SprintStatus | null>(null);
@@ -37,7 +37,19 @@ export function PaperList() {
   const [sprintDoneMessage, setSprintDoneMessage] = useState("");
 
   useEffect(() => {
-    if (!isReady || !username) return;
+    if (!isReady) return;
+
+    if (!username) {
+      setCategories([]);
+      setSprintStatus(null);
+      setSprintDoneMessage("");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setSprintStatus(null);
+    setSprintDoneMessage("");
 
     async function load() {
       const name = username;
@@ -56,7 +68,7 @@ export function PaperList() {
       setLoading(false);
     }
 
-    load();
+    void load();
   }, [isReady, username]);
 
   async function startPractice(paperId: number, restart = false) {
@@ -79,15 +91,10 @@ export function PaperList() {
   }
 
   async function startSprint() {
-    if (!username || startingSprint) return;
+    if (startingSprint) return;
 
-    if (isGuestMode) {
+    if (!username || isGuestMode || !isCloudLoggedIn) {
       openCloudLogin();
-      return;
-    }
-
-    if (sprintStatus?.activeProgressId) {
-      router.push(`/sprint?progressId=${sprintStatus.activeProgressId}`);
       return;
     }
 
@@ -104,9 +111,15 @@ export function PaperList() {
       progressId?: number;
       completed?: boolean;
       message?: string;
+      error?: string;
     };
 
     setStartingSprint(false);
+
+    if (!response.ok) {
+      setSprintDoneMessage(data.error ?? "无法开始冲刺，请稍后重试");
+      return;
+    }
 
     if (data.progressId) {
       router.push(`/sprint?progressId=${data.progressId}`);
@@ -115,8 +128,16 @@ export function PaperList() {
 
     if (data.completed) {
       setSprintDoneMessage(data.message ?? "待巩固题目已全部刷完！");
+      setSprintStatus((prev) =>
+        prev
+          ? { ...prev, activeProgressId: null, activeGroupNumber: null }
+          : prev
+      );
     }
   }
+
+  const hasActiveSprint =
+    isCloudLoggedIn && !!sprintStatus?.activeProgressId && sprintStatus.available;
 
   if (loading || !settingsReady) {
     return (
@@ -169,19 +190,27 @@ export function PaperList() {
               <Zap className="h-3.5 w-3.5" />
               {startingSprint
                 ? "准备中..."
-                : sprintStatus?.activeProgressId
-                  ? "继续冲刺"
-                  : "最后冲刺"}
+                : !isCloudLoggedIn
+                  ? "登录后冲刺"
+                  : hasActiveSprint
+                    ? "继续冲刺"
+                    : "最后冲刺"}
             </Button>
           </div>
 
-          {sprintStatus?.available && (
+          {sprintStatus?.available && isCloudLoggedIn && (
             <p className="-mt-2 mb-3 text-xs text-app-text-muted">
               冲刺 · 已完成 {sprintStatus.completedGroups} 组 · 待巩固{" "}
               {sprintStatus.unmasteredCount} 题
-              {sprintStatus.activeGroupNumber
+              {hasActiveSprint && sprintStatus.activeGroupNumber
                 ? ` · 第 ${sprintStatus.activeGroupNumber} 组进行中`
                 : ""}
+            </p>
+          )}
+
+          {isGuestMode && (
+            <p className="-mt-2 mb-3 text-xs text-app-text-muted">
+              冲刺需登录云同步账号，登录后可跨设备继续
             </p>
           )}
 
