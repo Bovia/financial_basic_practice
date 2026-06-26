@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import {
   buildMasteredKeySet,
   getAllQuestionRefs,
-  getQuestionsFromRefs,
   getUnmasteredPool,
   parseQuestionRefs,
 } from "@/lib/sprint";
+import { scorePaperProgress } from "@/lib/scoring";
 import { getOrCreateUser } from "@/lib/user";
 
 type RouteContext = {
@@ -33,10 +33,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Sprint record not found" }, { status: 404 });
     }
 
-    const refs = parseQuestionRefs(progress.questionIds) ?? [];
-    const questions = getQuestionsFromRefs(refs);
-    const score = progress.score ?? 0;
-    const totalQuestions = questions.length;
+    const scored = scorePaperProgress(progress);
 
     const allRefs = getAllQuestionRefs();
     const allRecords = await prisma.practiceRecord.findMany({
@@ -51,11 +48,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       progressId: progress.id,
       groupNumber: progress.sprintGroupNumber ?? 1,
-      score,
-      totalQuestions,
-      correctCount: score,
-      incorrectCount: totalQuestions - score,
-      accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
+      score: scored.score,
+      maxScore: scored.maxScore,
+      totalQuestions: scored.totalQuestions,
+      correctCount: scored.correctCount,
+      incorrectCount: scored.incorrectCount,
+      accuracy: scored.accuracy,
       remainingPool,
       completedGroups,
       allDone: remainingPool === 0,

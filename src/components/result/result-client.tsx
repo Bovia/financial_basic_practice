@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight, RefreshCw, Trophy } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
 import { isOptionInAnswer } from "@/lib/answer";
+import { formatPointScore } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { AnswerOption, ResultDetail } from "@/types/question";
 
@@ -115,23 +116,28 @@ export function ResultClient({ progressId }: ResultClientProps) {
             <div>
               <p className="text-xs text-white/70">{result.paperName}</p>
               <p className="mt-1 text-3xl font-bold">
-                {result.score}/{result.totalQuestions}
+                {formatPointScore(result.score)} 分
               </p>
+              {result.maxScore >= 100 && (
+                <span
+                  className={cn(
+                    "mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                    result.passed ? "bg-white/25 text-white" : "bg-black/20 text-white/90"
+                  )}
+                >
+                  {result.passed ? "合格" : "未合格（60 分及格）"}
+                </span>
+              )}
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
               <Trophy className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-3 text-xs">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+            <span>
+              答对 {result.correctCount}/{result.totalQuestions} 题
+            </span>
             <span>正确率 {result.accuracy}%</span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-app-success" />
-              对 {result.correctCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-app-error" />
-              错 {result.incorrectCount}
-            </span>
           </div>
         </div>
 

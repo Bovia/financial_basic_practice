@@ -42,6 +42,7 @@ export type PaperListItem = {
 export type HistoryRecord = {
   id: number;
   score: number;
+  maxScore: number;
   totalQuestions: number;
   completedAt: string;
 };
@@ -68,10 +69,12 @@ export type ResultDetail = {
   paperId: number;
   paperName: string;
   score: number;
+  maxScore: number;
   totalQuestions: number;
   correctCount: number;
   incorrectCount: number;
   accuracy: number;
+  passed: boolean;
   answers: Array<{
     questionId: number;
     questionIndex: number;

@@ -12,6 +12,8 @@ type SprintCompleteClientProps = {
 type SprintCompleteData = {
   groupNumber: number;
   score: number;
+  maxScore: number;
+  correctCount: number;
   totalQuestions: number;
   remainingPool: number;
   allDone: boolean;
@@ -77,7 +79,7 @@ export function SprintCompleteClient({ progressId }: SprintCompleteClientProps) 
     <SprintAward
       username={result.username}
       groupNumber={result.groupNumber}
-      score={result.score}
+      correctCount={result.correctCount}
       totalQuestions={result.totalQuestions}
       remainingPool={result.remainingPool}
       allDone={result.allDone}

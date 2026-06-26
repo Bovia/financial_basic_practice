@@ -6,6 +6,7 @@ import {
 } from "@/lib/progress-questions";
 import { getQuestionsFromRefs, parseQuestionRefs } from "@/lib/sprint";
 import { isAnswerCorrect } from "@/lib/questions";
+import { scorePaperProgress, toStoredScore, isExamPassed } from "@/lib/scoring";
 import { getOrCreateUser } from "@/lib/user";
 
 type AnswerInput = {
@@ -129,14 +130,18 @@ export async function POST(request: NextRequest) {
     }
 
     let score: number | null = progress.score;
+    let scoredResult: ReturnType<typeof scorePaperProgress> | null = null;
 
     if (complete) {
-      const savedByKey = new Map(
-        savedAnswers.map((item) => [`${item.paperId}:${item.questionId}`, item])
-      );
-      const records = progress.practiceRecords.map((record) => {
-        const saved = savedByKey.get(`${record.paperId}:${record.questionId}`);
-        return saved ? { isCorrect: saved.isCorrect } : { isCorrect: record.isCorrect };
+      const mergedRecords = progress.practiceRecords.map((record) => {
+        const saved = savedAnswers.find(
+          (item) => item.paperId === record.paperId && item.questionId === record.questionId
+        );
+        return {
+          paperId: record.paperId,
+          questionId: record.questionId,
+          isCorrect: saved?.isCorrect ?? record.isCorrect,
+        };
       });
 
       for (const saved of savedAnswers) {
@@ -146,11 +151,21 @@ export async function POST(request: NextRequest) {
               record.paperId === saved.paperId && record.questionId === saved.questionId
           )
         ) {
-          records.push({ isCorrect: saved.isCorrect });
+          mergedRecords.push({
+            paperId: saved.paperId,
+            questionId: saved.questionId,
+            isCorrect: saved.isCorrect,
+          });
         }
       }
 
-      score = records.filter((r) => r.isCorrect).length;
+      scoredResult = scorePaperProgress({
+        kind: progress.kind,
+        paperId: progress.paperId,
+        questionIds: progress.questionIds,
+        practiceRecords: mergedRecords,
+      });
+      score = toStoredScore(scoredResult.score);
     }
 
     const updated = await prisma.paperProgress.update({
@@ -165,21 +180,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (complete) {
+    if (complete && scoredResult) {
       return NextResponse.json({
         progressId: updated.id,
         savedAnswer: savedAnswers[0] ?? null,
         savedAnswers,
         currentQuestionIndex: updated.currentQuestionIndex,
         completed: true,
-        score: updated.score,
+        score: scoredResult.score,
+        maxScore: scoredResult.maxScore,
         totalQuestions,
-        correctCount: updated.score ?? 0,
-        incorrectCount: totalQuestions - (updated.score ?? 0),
-        accuracy:
-          totalQuestions > 0
-            ? Math.round(((updated.score ?? 0) / totalQuestions) * 100)
-            : 0,
+        correctCount: scoredResult.correctCount,
+        incorrectCount: scoredResult.incorrectCount,
+        accuracy: scoredResult.accuracy,
+        passed: isExamPassed(scoredResult.score, scoredResult.maxScore),
         isSprint,
       });
     }

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type SprintAwardProps = {
   username: string;
   groupNumber: number;
-  score: number;
+  correctCount: number;
   totalQuestions: number;
   remainingPool: number;
   allDone: boolean;
@@ -177,7 +177,7 @@ function Confetti({ theme }: { theme: SprintTheme }) {
 export function SprintAward({
   username,
   groupNumber,
-  score,
+  correctCount,
   totalQuestions,
   remainingPool,
   allDone,
@@ -222,7 +222,8 @@ export function SprintAward({
           {cheer}
         </h1>
         <p className={cn("mt-4 text-base", styles.accentMuted)}>
-          本轮 {score}/{totalQuestions}
+          本轮 {correctCount}/{totalQuestions} 题
+          {totalQuestions > 0 && ` · ${Math.round((correctCount / totalQuestions) * 100)}%`}
           {!allDone && remainingPool > 0 && ` · 待巩固还剩 ${remainingPool} 题`}
         </p>
         {allDone && (

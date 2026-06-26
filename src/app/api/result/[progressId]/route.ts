@@ -5,6 +5,7 @@ import {
   parseProgressQuestionIds,
 } from "@/lib/progress-questions";
 import { getPaper } from "@/lib/questions";
+import { isExamPassed, scorePaperProgress } from "@/lib/scoring";
 import { getOrCreateUser } from "@/lib/user";
 
 type RouteContext = {
@@ -41,14 +42,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
     const questions = getProgressQuestions(progress.paperId, progressQuestionIds);
-    const totalQuestions = questions.length;
-    let correctCount = 0;
+    const scored = scorePaperProgress(progress);
 
     const answers = questions.map((question, index) => {
       const record = progress.practiceRecords.find((r) => r.questionId === question.id);
       const selectedAnswer = record?.selectedAnswer ?? null;
       const isCorrect = record?.isCorrect ?? false;
-      if (isCorrect) correctCount++;
 
       return {
         questionId: question.id,
@@ -62,19 +61,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
       };
     });
 
-    const incorrectCount = totalQuestions - correctCount;
-    const score = progress.score ?? correctCount;
-    const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-
     return NextResponse.json({
       progressId: progress.id,
       paperId: progress.paperId,
       paperName: paper.name,
-      score,
-      totalQuestions,
-      correctCount,
-      incorrectCount,
-      accuracy,
+      score: scored.score,
+      maxScore: scored.maxScore,
+      totalQuestions: scored.totalQuestions,
+      correctCount: scored.correctCount,
+      incorrectCount: scored.incorrectCount,
+      accuracy: scored.accuracy,
+      passed: isExamPassed(scored.score, scored.maxScore),
       answers,
     });
   } catch {

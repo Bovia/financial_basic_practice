@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCategories, getPaperTotalQuestions } from "@/lib/questions";
+import { getFullPaperMaxScore, scorePaperProgress } from "@/lib/scoring";
 import { getOrCreateUser, isGuestUsername } from "@/lib/user";
 import type { HistoryRecord, PaperListItem, PaperStatus } from "@/types/question";
 
@@ -68,12 +69,16 @@ export async function GET(request: NextRequest) {
           progressId = latest.id;
         }
 
-        const history: HistoryRecord[] = completedProgresses.map((p) => ({
-          id: p.id,
-          score: p.score ?? 0,
-          totalQuestions,
-          completedAt: p.updatedAt.toISOString(),
-        }));
+        const history: HistoryRecord[] = completedProgresses.map((p) => {
+          const scored = scorePaperProgress(p);
+          return {
+            id: p.id,
+            score: scored.score,
+            maxScore: scored.maxScore || getFullPaperMaxScore(paper.id),
+            totalQuestions,
+            completedAt: p.updatedAt.toISOString(),
+          };
+        });
 
         return {
           id: paper.id,

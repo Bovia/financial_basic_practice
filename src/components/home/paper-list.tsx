@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import { useUser } from "@/hooks/use-user";
 import { guestProgressId } from "@/lib/portfolio-embed";
+import { formatPointScore } from "@/lib/scoring";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import type { PaperListItem } from "@/types/question";
 
@@ -244,7 +245,7 @@ export function PaperList() {
                         )}
                         {paper.status === "completed" && (
                           <span className="font-medium text-app-success">
-                            ✓ {paper.history[0]?.score}/{paper.totalQuestions}
+                            ✓ {formatPointScore(paper.history[0]?.score ?? 0)} 分
                           </span>
                         )}
                       </p>
@@ -289,7 +290,7 @@ export function PaperList() {
                         >
                           <span className="text-app-text-secondary">记录{paper.history.length - index}</span>
                           <span className="font-medium text-app-success">
-                            ✓ {record.score}/{record.totalQuestions} →
+                            ✓ {formatPointScore(record.score)} 分 →
                           </span>
                         </button>
                       ))}

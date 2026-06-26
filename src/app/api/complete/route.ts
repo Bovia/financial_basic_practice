@@ -4,6 +4,7 @@ import {
   getProgressTotalQuestions,
   parseProgressQuestionIds,
 } from "@/lib/progress-questions";
+import { scorePaperProgress, toStoredScore, isExamPassed } from "@/lib/scoring";
 import { getOrCreateUser } from "@/lib/user";
 
 export async function POST(request: NextRequest) {
@@ -31,24 +32,26 @@ export async function POST(request: NextRequest) {
 
     const progressQuestionIds = parseProgressQuestionIds(progress.questionIds);
     const totalQuestions = getProgressTotalQuestions(progress.paperId, progressQuestionIds);
-    const correctCount = progress.practiceRecords.filter((r) => r.isCorrect).length;
+    const scored = scorePaperProgress(progress);
 
     const updated = await prisma.paperProgress.update({
       where: { id: progressId },
       data: {
         completed: true,
-        score: correctCount,
+        score: toStoredScore(scored.score),
         currentQuestionIndex: Math.max(totalQuestions - 1, 0),
       },
     });
 
     return NextResponse.json({
       progressId: updated.id,
-      score: updated.score,
+      score: scored.score,
+      maxScore: scored.maxScore,
       totalQuestions,
-      correctCount,
-      incorrectCount: totalQuestions - correctCount,
-      accuracy: totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0,
+      correctCount: scored.correctCount,
+      incorrectCount: scored.incorrectCount,
+      accuracy: scored.accuracy,
+      passed: isExamPassed(scored.score, scored.maxScore),
     });
   } catch {
     return NextResponse.json({ error: "Failed to complete paper" }, { status: 500 });
