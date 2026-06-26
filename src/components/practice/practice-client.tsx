@@ -13,6 +13,7 @@ import { useUser } from "@/hooks/use-user";
 import { isGuestProgressId } from "@/lib/portfolio-embed";
 import { loadGuestProgress, saveGuestProgress } from "@/lib/guest-progress";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import { useSwipeNavigation } from "@/hooks/use-swipe-navigation";
 import {
   isAnswerMatch,
   isOptionInAnswer,
@@ -400,11 +401,30 @@ export function PracticeClient({ paperId, progressId, questions, sprintMeta }: P
     return true;
   }
 
-  function navigateToIndex(newIndex: number) {
-    if (newIndex < 0 || newIndex >= totalQuestions) return;
-    cancelAutoNext();
-    setCurrentIndex(newIndex);
-  }
+  const navigateToIndex = useCallback(
+    (newIndex: number) => {
+      if (newIndex < 0 || newIndex >= totalQuestions) return;
+      cancelAutoNext();
+      setCurrentIndex(newIndex);
+    },
+    [totalQuestions, cancelAutoNext]
+  );
+
+  const swipeToPrev = useCallback(() => {
+    navigateToIndex(currentIndex - 1);
+  }, [currentIndex, navigateToIndex]);
+
+  const swipeToNext = useCallback(() => {
+    navigateToIndex(currentIndex + 1);
+  }, [currentIndex, navigateToIndex]);
+
+  const swipeEnabled = !saving && !sheetOpen && !exitOpen;
+
+  const swipeHandlers = useSwipeNavigation({
+    enabled: swipeEnabled,
+    onSwipeLeft: swipeToNext,
+    onSwipeRight: swipeToPrev,
+  });
 
   async function handleSubmit() {
     setSaving(true);
@@ -538,7 +558,10 @@ export function PracticeClient({ paperId, progressId, questions, sprintMeta }: P
         <Progress value={progressPercent} />
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6">
+      <main
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6 touch-pan-y"
+        {...swipeHandlers}
+      >
         <h2 className="mb-4 text-base font-semibold leading-relaxed text-app-text">
           {currentQuestion.title}
         </h2>
